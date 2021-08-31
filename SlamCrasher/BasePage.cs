@@ -22,15 +22,19 @@ namespace Pages
         public IWebElement Find(By locator)
         {
             wait.Until(drv => drv.FindElement(locator));
-            IWebElement Element;
-            try
+            IWebElement Element = null;
+            for(int i = 3; i > 0; i++)
             {
-                Element = _driver.FindElement(locator);
-                wait.Until(ready => Element.Displayed && Element.Enabled);
-            }
-            catch(StaleElementReferenceException)
-            {
-                Element = Find(locator);
+                try
+                {
+                    Element = _driver.FindElement(locator);
+                    wait.Until(ready => Element.Displayed && Element.Enabled);
+                    break;
+                }
+                catch (StaleElementReferenceException)
+                {
+                    
+                }
             }
             return Element;
         }
@@ -58,6 +62,7 @@ namespace Pages
         public void RefreshPage()
         {
             _driver.Navigate().Refresh();
+            CustomTimeout(1000);
         }
         public void Type(string toSend, By Locator) => Find(Locator).SendKeys(toSend);
         public void SetText(string Text, By Locator)
@@ -77,7 +82,7 @@ namespace Pages
             }
             catch ( StaleElementReferenceException )
             {
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(500);
                 Click(locator);
             }
         }

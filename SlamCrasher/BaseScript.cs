@@ -1,12 +1,7 @@
-using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Scripts
 {
@@ -15,49 +10,39 @@ namespace Scripts
         public IWebDriver driver;
         public bool headless;
         public string gameUrl;
-        public string strategy;
         public bool demo;
         public string token;
         public decimal tokenStart;
         public decimal tokenMinBet;
         public decimal tokenNormal;
         public decimal winsPerRun;
+        public decimal startingBet;
         public decimal cashout;
         public decimal targetDefault;
         public decimal targetNormal;
-        public decimal startingBet;
-
+        
         private void LoadConfigs()
         {
-
             headless = bool.Parse(ConfigurationManager.AppSettings["headless"]);
-            demo = bool.Parse(ConfigurationManager.AppSettings["demoMode"]);
-            token = demo ? token = "slam" : token = ConfigurationManager.AppSettings["token"];
             gameUrl = ConfigurationManager.AppSettings["Slamcrash"];
-            strategy = ConfigurationManager.AppSettings["strategy"];
+            demo = bool.Parse(ConfigurationManager.AppSettings["demoMode"]);
 
-            winsPerRun = Convert.ToInt32(ConfigurationManager.AppSettings["winsPerRun"]);
-            decimal.TryParse(ConfigurationManager.AppSettings["startingBet"], out startingBet);
-            cashout = decimal.Parse(ConfigurationManager.AppSettings["cashout"]);
-
+            targetDefault = decimal.Parse(ConfigurationManager.AppSettings["targetDefault"]);
+            targetNormal = decimal.Parse(ConfigurationManager.AppSettings["targetNormal"]);
+            
+            token = demo ? token = "slam" : token = ConfigurationManager.AppSettings["token"];
             tokenStart = decimal.Parse(ConfigurationManager.AppSettings[token + "Start"]);
-            decimal.TryParse(ConfigurationManager.AppSettings[token + "Minbet"], out tokenMinBet);
-            decimal.TryParse(ConfigurationManager.AppSettings[token + "Normal"], out tokenNormal);
-            decimal.TryParse(ConfigurationManager.AppSettings["targetDefault"], out targetDefault);
-            decimal.TryParse(ConfigurationManager.AppSettings["targetNormal"], out targetNormal);
+            tokenMinBet = decimal.Parse(ConfigurationManager.AppSettings[token + "Minbet"]);
+            tokenNormal = decimal.Parse(ConfigurationManager.AppSettings[token + "Normal"]);
             
+            winsPerRun = Convert.ToInt32(ConfigurationManager.AppSettings["winsPerRun"]);
+            startingBet = decimal.Parse(ConfigurationManager.AppSettings["startingBet"]);
+            cashout = decimal.Parse(ConfigurationManager.AppSettings["cashout"]);
             
-            if (demo)
+            if (startingBet < tokenMinBet)
             {
-                decimal.TryParse(ConfigurationManager.AppSettings["slamMinbet"], out tokenMinBet);
-                decimal.TryParse(ConfigurationManager.AppSettings["slamNormal"], out tokenNormal);
-                decimal.TryParse(ConfigurationManager.AppSettings["slamStart"], out tokenStart);
-                if (startingBet < tokenMinBet)
-                {
-                    startingBet = tokenMinBet;
-                }
+                startingBet = tokenMinBet;
             }
-            decimal.TryParse(ConfigurationManager.AppSettings[token + "Minbet"], out tokenMinBet);
         }
 
         public virtual void NewBrowserSetup()
@@ -68,20 +53,7 @@ namespace Scripts
             driver = new ChromeDriver(options);
             driver.Manage().Window.Maximize();
         }
+
         public void TearDown() => driver.Quit();
-        
-        //public List<string> ReadFileLines(string Filename)
-        //{
-        //    using var reader = new StreamReader(Filename);
-        //    List<string> FileLines = new List<string>();
-        //    while ( !reader.EndOfStream )
-        //    {
-        //        var line = reader.ReadLine().Replace("\0", "").Replace("\t", "");
-        //        FileLines.Add(line);
-        //    }
-        //    reader.Close();
-        //    File.Delete(Filename);
-        //    return FileLines;
-        //}
     }
 }

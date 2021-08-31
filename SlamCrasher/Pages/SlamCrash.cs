@@ -2,12 +2,10 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Pages
 {
-
     public class SlamCrash : BasePage
     {
 
@@ -49,6 +47,7 @@ namespace Pages
         public bool MetamaskAlert => ElementExists(metamaskAlertShownLocator);
         public bool Web3WalletsMenuShown => ElementExists(web3WalletsMenuShownLocator);
         public bool WalletConnectQRShown => ElementExists(walletConnectQRShownLocator);
+        public bool CashierPopupLoadedIndicator => ElementExists(By.XPath(cashierPopupLoadedIndicatorLocator));
         public bool BetButtonShown => ElementExists(betButtonLocator);
         public bool HistoryButtonShown => ElementExists(historyButtonLocator);
         public bool CashierButtonShown => ElementExists(cashierButtonLocator);
@@ -63,13 +62,10 @@ namespace Pages
         public bool WinIndicator => ElementExists(winIndicatorLocator);
         public bool LossIndicator => ElementExists(lossIndicatorLocator);
         public bool InsufficientFundsIndicator => ElementExists(insufficientFundsLocator);
-        public bool CashierPopupLoadedIndicator => ElementExists(By.XPath(cashierPopupLoadedIndicatorLocator));
         
-
         //Calulations
         public decimal WouldHaveWonRatio(List<PreviousGame> history, decimal target) => (decimal)history.Count(x => x.crash > target) / history.Count;
         
-
         public void ClearServerConnect(string fromWhere)
         {
             int seconds = 0;
@@ -128,21 +124,9 @@ namespace Pages
         }
         public PreviousGame GetLastGame()
         {
-            int attempts = 0;
-            while (attempts < 2)
-            {
-                try
-                {
-                    decimal.TryParse(Find(By.XPath(prevSixGamesLocator + "[1]")).Text.Replace("x", ""), out decimal crashPoint);
-                    int roundNumber = Convert.ToInt32(Find(By.XPath(prevSixGamesLocator + "[1]")).GetAttribute("onclick").Replace("Hexa.history.game_detail.view(", "").Replace(");", ""));
-                    return new PreviousGame(roundNumber, crashPoint);
-                }
-                catch (StaleElementReferenceException)
-                {
-                }
-                attempts++;
-            }
-            return GetLastGame();
+            decimal.TryParse(Find(By.XPath(prevSixGamesLocator + "[1]")).Text.Replace("x", ""), out decimal crashPoint);
+            int roundNumber = Convert.ToInt32(Find(By.XPath(prevSixGamesLocator + "[1]")).GetAttribute("onclick").Replace("Hexa.history.game_detail.view(", "").Replace(");", ""));
+            return new PreviousGame(roundNumber, crashPoint);
         }
         public List<PreviousGame> GetLastSixRounds()
         {
@@ -151,16 +135,8 @@ namespace Pages
             {
                 int roundNumber;
                 decimal crashPoint;
-                try
-                {
-                    decimal.TryParse(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).Text.Replace("x", ""), out crashPoint);
-                    roundNumber = Convert.ToInt32(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).GetAttribute("onclick").Replace("Hexa.history.game_detail.view(", "").Replace(");", ""));
-                }
-                catch(StaleElementReferenceException)
-                {
-                    decimal.TryParse(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).Text.Replace("x", ""), out crashPoint);
-                    roundNumber = Convert.ToInt32(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).GetAttribute("onclick").Replace("Hexa.history.game_detail.view(", "").Replace(");", ""));
-                }
+                decimal.TryParse(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).Text.Replace("x", ""), out crashPoint);
+                roundNumber = Convert.ToInt32(Find(By.XPath(prevSixGamesLocator + $"[{i}]")).GetAttribute("onclick").Replace("Hexa.history.game_detail.view(", "").Replace(");", ""));
                 lastSix.Add(new PreviousGame(roundNumber, crashPoint));
             }
             return lastSix;
@@ -172,19 +148,9 @@ namespace Pages
             List<PreviousGame> history = new List<PreviousGame>();
             for (int i = 1; i < 51; i++)
             {
-                try
-                {
-                    decimal.TryParse(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).Text.Replace("x", ""), out decimal crashPoint);
-                    int roundNumber = Convert.ToInt32(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).GetAttribute("data-game-id"));
-                    history.Add(new PreviousGame(roundNumber, crashPoint));
-                }
-                catch(StaleElementReferenceException)
-                {
-                    decimal.TryParse(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).Text.Replace("x", ""), out decimal crashPoint);
-                    int roundNumber = Convert.ToInt32(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).GetAttribute("data-game-id"));
-                    history.Add(new PreviousGame(roundNumber, crashPoint));
-                }
-                
+                decimal.TryParse(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).Text.Replace("x", ""), out decimal crashPoint);
+                int roundNumber = Convert.ToInt32(Find(By.XPath(historyPopupRoundsLocator + $"[{i}]")).GetAttribute("data-game-id"));
+                history.Add(new PreviousGame(roundNumber, crashPoint));
             }
             Click(historyCloseLinkLocator);
             CustomTimeout(200); //for the splash screen to disappear
@@ -235,7 +201,7 @@ namespace Pages
                 }
                 else
                 {
-                    Console.WriteLine("Got new history");
+                    Console.WriteLine("Got fresh history");
                     newHistory = GetHistory();
                 }
                 return newHistory;
@@ -279,7 +245,7 @@ namespace Pages
             IWebElement range = Find(rangeSliderLocator);
             int width = range.Size.Width;
             Actions act = new Actions(_driver);
-            act.ClickAndHold(range).MoveByOffset(0,0).Perform();
+            act.ClickAndHold(range).MoveByOffset(0, 0).Perform();
             CustomTimeout(10);
             act.MoveByOffset(-width, 0).Release().Perform();
         }
@@ -338,16 +304,9 @@ namespace Pages
         {
             while (!LossIndicator && !WinIndicator)
             {
-                CustomTimeout(100);
+                CustomTimeout(50);
             }
-            if (WinIndicator)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return WinIndicator;
         }
         public void CrashOut(string message)
         {
@@ -367,4 +326,5 @@ namespace Pages
             crash = crashPoint;
         }
     }
+
 }

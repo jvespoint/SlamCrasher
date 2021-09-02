@@ -17,6 +17,14 @@ namespace Pages
             _driver = driver;
             wait = new WebDriverWait(driver, TimeSpan.FromSeconds(60));
         }
+        
+        //Locators needed in both SlamCrash & History
+        public readonly By historyButtonLocator = By.XPath("//span[text()='HISTORY']");
+        public readonly string historyPopupRoundsLocator = "//div[@class='history-text']/div";
+        public bool HistoryPopupShown => ElementExists(By.XPath(historyPopupRoundsLocator));
+        public readonly By historyCloseLinkLocator = By.XPath("//a[text()='Close']");
+        //
+
         public string GetTitle => _driver.Title;
         public IWebDriver GetDriver => _driver;
         public IWebElement Find(By locator)

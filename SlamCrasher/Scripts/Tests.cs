@@ -5,12 +5,11 @@ using System.Linq;
 
 namespace Scripts
 {
-    public class TestSetBet : GameScript
+    public class Tests : GameScript
     {
         [Test]
         public void TestSetBetScript()
         {
-
             SetBet(0.02m, 1.00m, 2.00m, 2.00m, 100.00m);
             SkipGames(1);
             SetBet(0.04m, 0.02m, 2.00m, 2.00m, 100.00m);
@@ -32,7 +31,6 @@ namespace Scripts
             SetBet(10.24m, 5.12m, 2.00m, 2.00m, 100.00m);
             SkipGames(1);
             SetBet(20.48m, 10.24m, 2.00m, 2.00m, 100.00m);
-            
         }
     }
 }

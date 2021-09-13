@@ -1,20 +1,19 @@
 ﻿using NUnit.Framework;
+using Pages;
 
 namespace Scripts
 {
     public class Lossless : GameScript
     {
-        private void PreFirstRoll()
+        private void BeforeFirstBet()
         {
-            void CheckTwoLosses()
-            {
-                if (!_history.LastGamesLoss(2, nextTarget))
-                {
-                    SkipGames(1);
-                    CheckTwoLosses();
-                }
-            }
-            //CheckTwoLosses();
+            _history = new History(driver);
+            SkipGames(1);
+            WaitForLosses();
+        }
+        private void BeforeBet()
+        {
+            _history.Update();
         }
         private void WeWon()
         {
@@ -22,17 +21,17 @@ namespace Scripts
         }
         private void WeLost()
         {
-            nextBet = (streakLoss + (originalWinProfit / 2)) / (nextTarget - 1);
+            nextBet = (streakLoss + (((nextBet * nextTarget) - nextBet) / 2)) / (nextTarget - 1);
             if (nextBet > startingBet * 1000)
             {
-                _slamCrash.CrashOut("Wtf");
+                EndGame("Wtf");
             }
         }
         
         [Test]
         public void LosslessStrategy()
         {
-            PlayGame(WeLost, WeWon, PreFirstRoll);
+            PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }
         [Test]
         public void SimulateLosses()

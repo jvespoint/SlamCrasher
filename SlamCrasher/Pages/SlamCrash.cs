@@ -102,7 +102,8 @@ namespace Pages
                 {
                     if (seconds > 180) //if its longer than 3 minutes, something has gone wrong.
                     {
-                        CrashOut("Walletconnect took longer than 3 minutes");
+                        Console.WriteLine("Wallet connect took too long.");
+                        _driver.Quit();
                     }
                     CustomTimeout(1000);
                     seconds++;
@@ -111,6 +112,7 @@ namespace Pages
             }
             ClearServerConnect("After Login");
             wait.Until(cashier => CashierButtonShown);
+            CustomTimeout(1000);
             if (InsufficientFundsIndicator)
             {
                 Click(cashierButtonLocator);
@@ -218,12 +220,6 @@ namespace Pages
                 CustomTimeout(100);
             }
             return WinIndicator;
-        }
-        public void CrashOut(string message)
-        {
-            Console.WriteLine("There was a problem:");
-            Console.WriteLine(message);
-            _driver.Quit();
         }
     }
 

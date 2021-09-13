@@ -1,7 +1,4 @@
 ﻿using NUnit.Framework;
-using Pages;
-using System;
-using System.Linq;
 
 namespace Scripts
 {

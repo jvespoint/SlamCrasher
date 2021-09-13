@@ -12,14 +12,8 @@ namespace Scripts
         public string gameUrl;
         public bool demo;
         public string token;
-        public decimal tokenStart;
-        public decimal tokenMinBet;
-        public decimal tokenNormal;
-        public decimal winsPerRun;
-        public decimal startingBet;
-        public decimal cashout;
-        public decimal targetDefault;
-        public decimal targetNormal;
+        public decimal tokenStart, tokenMinBet, startingBet, cashout, targetDefault;
+        public int winsPerRun, tokenNormal, targetNormal;
         
         private void LoadConfigs()
         {
@@ -28,12 +22,12 @@ namespace Scripts
             demo = bool.Parse(ConfigurationManager.AppSettings["demoMode"]);
 
             targetDefault = decimal.Parse(ConfigurationManager.AppSettings["targetDefault"]);
-            targetNormal = decimal.Parse(ConfigurationManager.AppSettings["targetNormal"]);
+            targetNormal = Int32.Parse(ConfigurationManager.AppSettings["targetNormal"]);
             
             token = demo ? token = "slam" : token = ConfigurationManager.AppSettings["token"];
             tokenStart = decimal.Parse(ConfigurationManager.AppSettings[token + "Start"]);
             tokenMinBet = decimal.Parse(ConfigurationManager.AppSettings[token + "Minbet"]);
-            tokenNormal = decimal.Parse(ConfigurationManager.AppSettings[token + "Normal"]);
+            tokenNormal = Int32.Parse(ConfigurationManager.AppSettings[token + "Normal"]);
             
             winsPerRun = Convert.ToInt32(ConfigurationManager.AppSettings["winsPerRun"]);
             startingBet = decimal.Parse(ConfigurationManager.AppSettings["startingBet"]);

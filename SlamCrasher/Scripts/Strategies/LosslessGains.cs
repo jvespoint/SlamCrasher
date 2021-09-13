@@ -1,67 +1,33 @@
 ﻿using NUnit.Framework;
 using Pages;
-using System;
-using System.Linq;
 
 namespace Scripts
 {
     public class LosslessGains : GameScript
     {
-        private void PreFirstRoll()
+        private void BeforeFirstBet()
         {
-            void CheckTwoLosses()
-            {
-                if (!_history.LastGamesLoss(2, nextTarget))
-                {
-                    SkipGames(1);
-                    CheckTwoLosses();
-                }
-            }
-            //CheckTwoLosses();
+            _history = new History(driver);
+            SkipGames(1);
+            WaitForLosses();
+        }
+        private void BeforeBet()
+        {
+            _history.Update();
         }
         private void WeWon()
         {
-            if (winStreak == 1)
-            {
-                if (_history.LastFewWinRatio(10, cashout) < 0.4m)
-                {
-                    streakWin = originalWinProfit * 2;
-                }
-                else
-                {
-                    streakWin = originalWinProfit;
-                }
-            }
-            nextBet = startingBet + (streakWin / 2);
-            if (nextBet > (startingBet * 10))
-            {
-                nextBet = lastBet;
-            }
+            nextBet = startingBet + (totalProfit / cashout);
         }
         private void WeLost()
         {
-            if (lossStreak == 1)
-            {
-                if (_history.LastFewWinRatio(20, cashout) < 0.7m)
-                {
-                    streakLoss = startingBet + originalWinProfit;
-                }
-                else
-                {
-                    streakLoss = startingBet;
-                }
-            }
-            nextBet = (streakLoss) / (nextTarget - 1);
-            if (nextBet > startingBet * 1000)
-            {
-                _slamCrash.CrashOut("Wtf");
-            }
+            nextBet = (streakLoss + (((nextTarget * startingBet) - startingBet) / 2)) / (nextTarget - 1);
         }
 
         [Test]
         public void LosslessGainsStrategy()
         {
-            PlayGame(WeLost, WeWon, PreFirstRoll);
+            PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }
         [Test]
         public void SimulateLosses()
@@ -73,5 +39,6 @@ namespace Scripts
         {
             Simulate(true, WeWon);
         }
+
     }
 }

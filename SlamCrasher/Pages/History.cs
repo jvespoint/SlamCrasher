@@ -53,10 +53,12 @@ namespace Pages
         public void Update()
         {
             int numberOfGames = games.Count;
-            int nextGameNumber = games[games.Count - 1].number + 1;
+            int nextGameNumber = games[^1].number + 1;
             while (ElementExists(By.XPath($"//div[contains(@onclick,'{nextGameNumber}')]")))
             {
+                #nullable enable
                 string? crashString = null;
+                #nullable disable
                 int attempts = 3;
                 while (attempts > 0)
                 {
@@ -76,7 +78,7 @@ namespace Pages
                 }
                 PreviousGame nextGame = new PreviousGame(nextGameNumber, decimal.Parse(crashString));
                 games.Add(nextGame);
-                Console.WriteLine("Added game: " + nextGame.number);
+                Console.WriteLine("Added game: " + nextGame.number + ". Crashed: " + nextGame.crash);
                 nextGameNumber++;
             }
             if (numberOfGames == games.Count)
@@ -101,7 +103,7 @@ namespace Pages
                 {
                     throw new StaleElementReferenceException();
                 }
-                if (lastGameNumber != games[games.Count -1].number) {
+                if (lastGameNumber != games[^1].number) {
                     Click(historyButtonLocator);
                     wait.Until(ready => HistoryPopupShown);
                     while (ElementExists(By.XPath($"//div[contains(@data-game-id,'{nextGameNumber}')]")))
@@ -117,14 +119,17 @@ namespace Pages
         }
         public bool LastGamesLoss(int numberOfGames, decimal target)
         {
+            if (numberOfGames < 1)
+            {
+                return true;
+            }
             List<bool> lost = new List<bool>();
             for (int i=1; i < numberOfGames+1; i++)
             {
-                decimal gameCrash = games[games.Count - i].crash;
-                int gameNumber = games[games.Count - i].number;
+                decimal gameCrash = games[^i].crash;
+                int gameNumber = games[^i].number;
                 lost.Add(gameCrash < target);
             }
-            Console.WriteLine(lost.All(x => x == true));
             return lost.All(x => x == true);
         }
         public decimal LastFewWinRatio(int few, decimal target)
@@ -134,7 +139,7 @@ namespace Pages
             {
                 for (int i = 1; i < few + 1; i++)
                 {
-                    lastFew.Add(games[games.Count - i]);
+                    lastFew.Add(games[^i]);
                 }
             }
             else

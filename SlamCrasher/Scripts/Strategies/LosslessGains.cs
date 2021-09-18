@@ -1,43 +1,69 @@
 ﻿using NUnit.Framework;
-using Pages;
+using System;
+using System.Linq;
 
 namespace Scripts
 {
     public class LosslessGains : GameScript
     {
+        decimal winRatio;
+        Random rnd;
+
         private void BeforeFirstBet()
         {
-            _history = new History(driver);
-            SkipGames(1);
-            WaitForLosses();
+            _history = new Pages.History(driver);
         }
         private void BeforeBet()
         {
             _history.Update();
+            winRatio = _history.LastFewWinRatio(100, nextTarget);
         }
         private void WeWon()
         {
-            nextBet = startingBet + (totalProfit / cashout);
+            nextBet = startingBet;
+        }
+        private decimal Extra(decimal winRatio)
+        {
+            decimal targetFactor = startingBet / nextTarget;
+            decimal lossStreakFactor = 2 * lossStreak * targetFactor;
+            decimal ratioFactor = ExpectedAverageWinRatio() / winRatio;
+            decimal extra = tokenMinBet + decimal.Round(ratioFactor * lossStreakFactor, tokenNormal.ToString().ToCharArray().Count(c => c == '0'));
+            return extra;
         }
         private void WeLost()
         {
-            nextBet = (streakLoss + (((nextTarget * startingBet) - startingBet) / 2)) / (nextTarget - 1);
+            BetFromStreakProfit(Extra(winRatio));
         }
-
         [Test]
         public void LosslessGainsStrategy()
         {
             PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }
+
+        //Simulation
+        private void SimBeforeFirstBet()
+        {
+
+        }
+        private void SimBeforeBet()
+        {
+            winRatio = 0.00m;
+            for (int i = 0; i < rnd.Next(1, 10); i++)
+            {
+                winRatio += 0.05m;
+            }
+            Console.WriteLine(winRatio);
+        }
         [Test]
         public void SimulateLosses()
         {
-            Simulate(false, WeLost);
+            rnd = new Random();
+            Simulate(false, WeLost, SimBeforeFirstBet, SimBeforeBet);
         }
         [Test]
         public void SimulateWins()
         {
-            Simulate(true, WeWon);
+            Simulate(false, WeWon, SimBeforeFirstBet, SimBeforeBet);
         }
 
     }

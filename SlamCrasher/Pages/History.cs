@@ -117,6 +117,17 @@ namespace Pages
                 }
             }
         }
+        public void SkipGames(int n)
+        {
+            int currentGame = games[^1].number;
+            int endGame = currentGame + n;
+            while (currentGame < endGame)
+            {
+                CustomTimeout(1000);
+                Update();
+                currentGame = games[^1].number;
+            }
+        }
         public bool LastGamesLoss(int numberOfGames, decimal target)
         {
             if (numberOfGames < 1)
@@ -131,6 +142,15 @@ namespace Pages
                 lost.Add(gameCrash < target);
             }
             return lost.All(x => x == true);
+        }
+        public void WaitForLosses(int n, decimal target)
+        {
+            if (!LastGamesLoss(n, target))
+            {
+                Console.WriteLine("Skipping game: WaitForLosses");
+                SkipGames(1);
+                WaitForLosses(n, target);
+            }
         }
         public decimal LastFewWinRatio(int few, decimal target)
         {

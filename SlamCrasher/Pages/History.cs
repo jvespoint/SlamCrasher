@@ -5,6 +5,16 @@ using System.Linq;
 
 namespace Pages
 {
+    public class PreviousGame
+    {
+        public decimal crash;
+        public int number;
+        public PreviousGame(int roundNumber, decimal crashPoint)
+        {
+            number = roundNumber;
+            crash = crashPoint;
+        }
+    }
     public class History : BasePage
     {
         public List<PreviousGame> games;
@@ -152,7 +162,7 @@ namespace Pages
                 WaitForLosses(n, target);
             }
         }
-        public decimal LastFewWinRatio(int few, decimal target)
+        public decimal WinRatio(int few, decimal target)
         {
             List<PreviousGame> lastFew = new List<PreviousGame>();
             if (few != 100)
@@ -166,8 +176,10 @@ namespace Pages
             {
                 lastFew = games;
             }
-            decimal ratio = (decimal)lastFew.Count(x => x.crash > target) / lastFew.Count;
-            Console.WriteLine("Ratio: " + ratio + " for last " + few + " games.");
+            decimal ratio = decimal.Round((decimal)lastFew.Count(x => x.crash > target) / lastFew.Count, 4);
+            string toLog = "Ratio: " + ratio;
+            toLog += few == 100 ? " for known history." : " for last " + few + " games.";
+            Console.WriteLine(toLog);
             return ratio;
         }
     }

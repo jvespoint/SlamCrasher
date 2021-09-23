@@ -52,21 +52,16 @@ namespace Pages
         public bool AccountShown => ElementExists(accountLocator);
         public bool PrevSixGamesShown => ElementExists(By.XPath(prevSixGamesLocator));
         public bool AllButtonsReady => BetButtonShown && HistoryButtonShown && CashierButtonShown && WalletBalanceShown && AccountShown && PrevSixGamesShown;
-        
         public bool SendingBet => ElementExists(sendingBetLocator);
         public bool Rolling => ElementExists(cashoutButtonLocator);
         public bool BetPlaced => SendingBet || Rolling;
         public bool WinIndicator => ElementExists(winIndicatorLocator);
         public bool LossIndicator => ElementExists(lossIndicatorLocator);
         public bool InsufficientFundsIndicator => ElementExists(insufficientFundsLocator);
-        
-        //Calulations
-        public decimal WouldHaveWonRatio(List<PreviousGame> history, decimal target) => (decimal)history.Count(x => x.crash > target) / history.Count;
-        
         public void ClearServerConnect(string fromWhere)
         {
             int seconds = 0;
-            CustomTimeout(1000); //wait here for pre-load to show indicator
+            CustomTimeout(2000); //wait here for pre-load to show indicator
             while (ConnectingToServer)
             {
                 if (seconds > 3)
@@ -112,7 +107,7 @@ namespace Pages
             }
             ClearServerConnect("After Login");
             wait.Until(cashier => CashierButtonShown);
-            CustomTimeout(1000);
+            CustomTimeout(2000);
             if (InsufficientFundsIndicator)
             {
                 Click(cashierButtonLocator);
@@ -136,9 +131,9 @@ namespace Pages
         }
         public void InitializeTarget()
         {
-            Console.WriteLine("Target Initialized: 2.00x");
             IncrementButtons(1, false);
             IncrementButtons(-1, false);
+            Console.WriteLine("Target Initialized: 2.00x");
         }
         public void IncrementButtons(int times, bool bet)
         {
@@ -220,17 +215,6 @@ namespace Pages
                 CustomTimeout(100);
             }
             return WinIndicator;
-        }
-    }
-
-    public class PreviousGame
-    {
-        public decimal crash;
-        public int number;
-        public PreviousGame(int roundNumber, decimal crashPoint)
-        {
-            number = roundNumber;
-            crash = crashPoint;
         }
     }
 }

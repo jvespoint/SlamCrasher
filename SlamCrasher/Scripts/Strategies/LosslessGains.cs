@@ -16,18 +16,19 @@ namespace Scripts
         private void BeforeBet()
         {
             _history.Update();
-            winRatio = _history.LastFewWinRatio(100, nextTarget);
+            winRatio = _history.WinRatio(100, nextTarget);
         }
         private void WeWon()
         {
             nextBet = startingBet;
+            ValidateBet();
         }
         private decimal Extra(decimal winRatio)
         {
-            decimal targetFactor = startingBet / nextTarget;
-            decimal lossStreakFactor = 2 * lossStreak * targetFactor;
+            decimal lossStreakFactor = lossStreak / cashout;
             decimal ratioFactor = ExpectedAverageWinRatio() / winRatio;
-            decimal extra = tokenMinBet + decimal.Round(ratioFactor * lossStreakFactor, tokenNormal.ToString().ToCharArray().Count(c => c == '0'));
+            decimal extra = decimal.Round(OriginalWinProfit() * ratioFactor * ratioFactor, tokenNormal.ToString().ToCharArray().Count(c => c == '0'));
+            Console.WriteLine(extra);
             return extra;
         }
         private void WeLost()
@@ -47,10 +48,10 @@ namespace Scripts
         }
         private void SimBeforeBet()
         {
-            winRatio = 0.00m;
+            winRatio = 0.15m;
             for (int i = 0; i < rnd.Next(1, 10); i++)
             {
-                winRatio += 0.05m;
+                winRatio += 0.01m;
             }
             Console.WriteLine(winRatio);
         }
@@ -63,7 +64,7 @@ namespace Scripts
         [Test]
         public void SimulateWins()
         {
-            Simulate(false, WeWon, SimBeforeFirstBet, SimBeforeBet);
+            Simulate(true, WeWon, SimBeforeFirstBet, SimBeforeBet);
         }
 
     }

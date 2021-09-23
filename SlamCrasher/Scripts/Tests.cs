@@ -9,6 +9,8 @@ namespace Scripts
         public void TestSetBetScript()
         {
             _history = new History(driver);
+            _slamCrash.Login(true, token);
+            token = "slam";
 
             SetBet(0.64m, 1.00m, 2.00m, 2.00m, 100.00m);
             _history.SkipGames(1);

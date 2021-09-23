@@ -3,60 +3,97 @@ using Pages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Net.Http;
 namespace Scripts
 {
     public class GameScript : BaseScript
     {
         public SlamCrash _slamCrash;
         public History _history;
-        public int winsSoFar, winStreak, lossStreak;
+        public int winsSoFar, winStreak, lossStreak, highestLossStreak;
         public decimal nextBet, lastBet, nextTarget, lastTarget, streakWin, streakLoss, startingBalance, balance, firstLossBet;
         private DateTime startTime;
+        public bool endSimulation;
+        List<decimal> profits;
         public decimal PotentialWin() => nextBet * nextTarget;
         public decimal PotentialProfit() => PotentialWin() - nextBet;
         public decimal OriginalWinProfit() => startingBet * cashout - startingBet;
         public decimal TotalProfit() => balance - startingBalance;
-        public decimal ExpectedAverageWinRatio() => 1 / nextTarget;
+        public decimal ExpectedAverageWinRatio() => (1 / nextTarget) - houseEdge;
         [SetUp]
         public void GameSetup()
         {
-            NewBrowserSetup();
-            _slamCrash = new SlamCrash(driver);
-            _slamCrash.Goto(gameUrl);
-            _slamCrash.ClearServerConnect("Inital Load");
-            _slamCrash.wait.Until(readyToLogin => _slamCrash.ReadyForLogin);
-            startTime = DateTime.Now;
-        }
-        [TearDown]
-        public void GameTearDown()
-        {
-            TearDown();
-        }
-        public void PlayGame(Action WeLost, Action WeWon, Action BeforeFirstBet, Action BeforeBet)
-        {
-            _slamCrash.Login(demo, token);
-
+            LoadConfigs();
             winsSoFar = 0;
-            nextBet = startingBet;
             lastBet = tokenStart;
             nextTarget = cashout;
             lastTarget = targetDefault;
             winStreak = 0;
             streakWin = 0.00m;
             lossStreak = 0;
+            highestLossStreak = 0;
             streakLoss = 0.00m;
+            startTime = DateTime.Now;
+            profits = new List<decimal>();
+            endSimulation = false;
+        }
+        [TearDown]
+        public void GameTearDown()
+        {
+            Console.WriteLine("~~~~~ Run Complete ~~~~~");
+            Console.WriteLine("Won " + winsSoFar + " games. Longest loss streak: " + highestLossStreak);
+            Console.WriteLine("Starting balance: " + startingBalance + token);
+            Console.WriteLine("Final balance: " + balance + token);
+            Console.WriteLine("Total Profit: " + TotalProfit() + token);
+            DateTime endTime = DateTime.Now;
+            TimeSpan timeElapsed = endTime.Subtract(startTime);
+            Console.WriteLine("Elapsed Time: " + timeElapsed);
+            string strSeconds = timeElapsed.TotalSeconds.ToString();
+            decimal decMinutes = decimal.Parse(strSeconds) / 60.00m;
+            decimal profitHour = decimal.Round(((TotalProfit() / decMinutes) * 60), 10);
+            Console.WriteLine("Profit / Hour: " + profitHour + " " + token);
+            using (var client = new HttpClient())
+            {
+                string tokenId = token == "bnb" ? "binancecoin" : "slam-token";
+                var response = client.GetAsync($"https://api.coingecko.com/api/v3/simple/price?ids={tokenId}&vs_currencies=usd").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = response.Content;
+                    string responseString = responseContent.ReadAsStringAsync().Result.Replace("{\"" + tokenId + "\":{\"usd\":", "").Replace("}}", "");
+                    double tokenPriceDouble = double.Parse(responseString);
+                    decimal tokenPrice = (decimal)tokenPriceDouble;
+                    Console.WriteLine("$ / Hour: " + (profitHour * tokenPrice) + " USD");
+                }
+            }
+            if (endSimulation == false)
+            {
+                TearDown();
+            }
+        }
+        public void PlayGame(Action WeLost, Action WeWon, Action BeforeFirstBet, Action BeforeBet)
+        {
+            NewBrowserSetup();
+            _slamCrash = new SlamCrash(driver);
+            _slamCrash.Goto(gameUrl);
+            _slamCrash.ClearServerConnect("Inital Load");
+            _slamCrash.wait.Until(readyToLogin => _slamCrash.ReadyForLogin);
+            _slamCrash.Login(demo, token);
+
+            balance = _slamCrash.GetBalance(token);
+            startingBalance = balance;
+            nextBet = startingBet;
+            ValidateBet();
+            startingBet = nextBet;
             firstLossBet = startingBet;
-            startingBalance = _slamCrash.GetBalance(token);
             //
             BeforeFirstBet();
             //
             _slamCrash.InitializeTarget();
-            while (winsSoFar < winsPerRun)
+            while (!CheckForEnd())
             {
                 Console.WriteLine("Balance: " + balance);
-
-                SetBet();
+                
+                SetBet(nextBet, lastBet, nextTarget, lastTarget, balance);
                 lastBet = nextBet;
                 lastTarget = nextTarget;
 
@@ -81,9 +118,16 @@ namespace Scripts
                     winStreak++;
                     decimal profit = (nextBet * nextTarget) - nextBet;
                     streakWin += profit;
+                    string toLog = winStreak + ": Profit: " + profit;
+                    if (winStreak == 1)
+                    {
+                        decimal streakProfit = profit - streakLoss;
+                        toLog += ". Recovery profit: " + streakProfit;
+                        profits.Add(streakProfit);
+                    }
                     lossStreak = 0;
                     streakLoss = 0.00m;
-                    Console.WriteLine(winStreak + ": Profit: " + profit + ". Streak profit: " + streakWin);
+                    Console.WriteLine(toLog);
                     //
                     WeWon();
                     //
@@ -98,35 +142,61 @@ namespace Scripts
                     {
                         firstLossBet = nextBet;
                     }
+                    if (lossStreak > highestLossStreak)
+                    {
+                        highestLossStreak = lossStreak;
+                    }
                     Console.WriteLine(lossStreak + ": Loss: " + nextBet + ". Streak loss: " + streakLoss);
                     //
                     WeLost();
                     //
                 }
+                balance = _slamCrash.GetBalance(token);
                 ValidateBet();
                 Console.WriteLine("Next bet: " + nextBet);
-                balance = _slamCrash.GetBalance(token);
+                if (nextBet > balance)
+                {
+                    StrategyFailure();
+                    break;
+                }
             }
-            Console.WriteLine("Won " + winsSoFar + " games:");
-            Console.WriteLine("Starting balance: " + startingBalance + token);
-            Console.WriteLine("Final balance: " + balance + token);
-            Console.WriteLine("Total Profit: " + TotalProfit() + token);
-            DateTime endTime = DateTime.Now;
-            TimeSpan timeElapsed = endTime.Subtract(startTime);
-            Console.WriteLine("Elapsed Time: " + timeElapsed);
-            string strSeconds = timeElapsed.TotalMinutes.ToString();
-            decimal decSeconds = decimal.Parse(strSeconds);
-            Console.WriteLine("Profit / Minute: " + (TotalProfit() / decSeconds) + token);
         }
         public void ValidateBet()
         {
             if (nextBet < tokenMinBet) { nextBet = tokenMinBet; }
             if (nextBet % tokenMinBet != 0)
             {
-                nextBet -= tokenMinBet / 10;
+                nextBet += tokenMinBet / 10;
                 nextBet = decimal.Round(nextBet, tokenNormal.ToString().ToCharArray().Count(c => c == '0'));
             }
-            if (nextBet > startingBalance / cashout) { EndGame("Critical strategic failure"); }
+            while (PotentialProfit() % tokenMinBet != 0)
+            {
+                nextBet += tokenMinBet;
+            }
+        }
+        public bool CheckForEnd()
+        {
+            TimeSpan timeElapsed = DateTime.Now.Subtract(startTime);
+            //winsSoFar
+            if(winStreak > 0)
+            {
+                if (winsSoFar >= winsPerRun)
+                {
+                    Console.WriteLine("End condition met: Number of Wins");
+                    return true;
+                }
+                if (timeElapsed >= minRunTime)
+                {
+                    Console.WriteLine("End condition met: Runtime");
+                    return true;
+                }
+                if (profits.Sum() >= profitTarget)
+                {
+                    Console.WriteLine("End condition met: Profit Target");
+                    return true;
+                }
+            }
+            return false;
         }
         public void BetFromProfit(decimal profit)
         {
@@ -141,7 +211,7 @@ namespace Scripts
         {
             BetFromProfit(streakLoss + streakProfit);
         }
-        public void SetBet()
+        public void SetBet(decimal nextBet, decimal lastBet, decimal nextTarget, decimal lastTarget, decimal balance)
         {
             int maxClicks = 50;
             List<int> diffs = new List<int>{
@@ -201,18 +271,13 @@ namespace Scripts
         }
         public void Simulate(bool weDidWin, Action Method, Action BeforeFirstBet, Action BeforeBet)
         {
-            winsSoFar = 0;
-            nextBet = startingBet;
-            lastBet = nextBet;
-            nextTarget = cashout;
-            lastTarget = nextTarget;
-            winStreak = 0;
-            streakWin = 0.00m;
-            lossStreak = 0;
-            streakLoss = 0.00m;
-            firstLossBet = startingBet;
-            startingBalance = demo ? 100.00m : 0.60m;
+            startingBalance = demo ? 100.00m : 0.76m;
             balance = startingBalance;
+            nextBet = startingBet;
+            ValidateBet();
+            startingBet = nextBet;
+            lastBet = tokenStart;
+            firstLossBet = startingBet;
             //
             BeforeFirstBet();
             void WeWon()
@@ -226,28 +291,31 @@ namespace Scripts
                 Method();
             }
             //
-            while (winsSoFar < winsPerRun)
+            
+            while (endSimulation == false)
             {
                 lastBet = nextBet;
                 lastTarget = nextTarget;
                 //
                 BeforeBet();
                 //
+                
                 if (weDidWin)
                 {
                     winsSoFar++;
                     winStreak++;
                     decimal profit = (nextBet * nextTarget) - nextBet;
-                    decimal recoveryProfit = profit - streakLoss;
                     streakWin += profit;
-                    lossStreak = 0;
-                    streakLoss = 0.00m;
-                    string winMessage = winStreak + ": Profit: " + profit + ". Streak profit: " + streakWin;
+                    string toLog = winStreak + ": Bet: " + nextBet + ". Profit: " + profit;
                     if (winStreak == 1)
                     {
-                        winMessage += ". Actual Profit: " + recoveryProfit;
+                        decimal streakProfit = profit - streakLoss;
+                        toLog += ". Recovery profit: " + streakProfit;
+                        profits.Add(streakProfit);
                     }
-                    Console.WriteLine(winMessage);
+                    lossStreak = 0;
+                    streakLoss = 0.00m;
+                    Console.WriteLine(toLog);
                     //
                     WeWon();
                     //
@@ -267,26 +335,51 @@ namespace Scripts
                     WeLost();
                     //
                 }
-                ValidateBet();
                 //
-                if (!weDidWin)
+                ValidateBet();
+                if (nextBet > balance)
                 {
-                    winsSoFar++;
+                    StrategyFailure();
+                    break;
                 }
-                decimal wonBalance = balance + (lastBet * lastTarget);
-                string roundOverMessage = "Balance: " + balance;
+                string roundOverMessage = " Balance: " + balance;
                 if(!weDidWin)
                 {
-                    roundOverMessage += ". If we'd won: " + wonBalance;
+                    decimal ifWedWon = decimal.Round(balance + (lastBet * lastTarget),4);
+                    profits.Add(ifWedWon - startingBalance);
+                    roundOverMessage += ". If we'd won: " + ifWedWon;
+                }
+                else
+                {
+                    decimal ifWedLost = balance - lastBet - ((lastBet * lastTarget)-lastBet);
+                    roundOverMessage += ". If we'd lost: " + ifWedLost;
+                    if (CheckForEnd())
+                    {
+                        endSimulation = true;
+                    }
                 }
                 Console.WriteLine( roundOverMessage );
             }
+            endSimulation = true;
         }
-        
-        public void EndGame(string message)
+        public void StrategyFailure()
         {
-            Console.WriteLine(message);
-            winsSoFar = winsPerRun;
+            Console.WriteLine("~~~~~Critical Strategy Failure~~~~~");
+            decimal chanceOfOneLoss = (1 - ExpectedAverageWinRatio());
+            decimal chanceOfOneWin = ExpectedAverageWinRatio();
+            decimal chanceOfThisLoss = chanceOfOneLoss;
+            decimal chanceOfThisWin = chanceOfOneWin;
+            for (int i = lossStreak; i > 1; i--)
+            {
+                chanceOfThisLoss *= chanceOfOneLoss;
+                chanceOfThisWin += chanceOfOneWin;
+            }
+            decimal oneInHowMany = 1.00m / chanceOfThisLoss;
+            Console.WriteLine("Chance of this loss: " + decimal.Round(chanceOfThisLoss * 100m, 10) + "% or 1 in " + decimal.Round(oneInHowMany, 6));
+            Console.WriteLine("Chance of this win: " + decimal.Round(chanceOfThisWin * 100m, 10) + "% or 1 in " + decimal.Round(1.00m / chanceOfThisWin, 6));
+            Console.WriteLine("Expected to win " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio(), 2) + " games before reaching this loss.");
+            Console.WriteLine("Average profit: " + decimal.Round(profits.Average(), 10));
+            Console.WriteLine("Expected to profit " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio() * profits.Average(), 10) + " before reaching this loss.");
         }
     }
 }

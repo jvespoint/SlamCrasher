@@ -15,17 +15,19 @@ namespace Scripts
         private void WeWon()
         {
             nextBet = startingBet;
+            ValidateBet();
         }
         private void WeLost()
         {
-            BetFromProfit(streakLoss);
+            BetFromStreakProfit(tokenMinBet);
         }
         [Test]
         public void SafeySafeStrategy()
         {
             PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }
-        //Simulation[Test]
+        //Simulation
+        [Test]
         public void SimulateLosses()
         {
             Simulate(false, WeLost, BeforeFirstBet, BeforeBet);
@@ -33,7 +35,7 @@ namespace Scripts
         [Test]
         public void SimulateWins()
         {
-            Simulate(false, WeWon, BeforeFirstBet, BeforeBet);
+            Simulate(true, WeWon, BeforeFirstBet, BeforeBet);
         }
 
     }

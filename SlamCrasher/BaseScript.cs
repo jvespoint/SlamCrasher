@@ -12,10 +12,12 @@ namespace Scripts
         public string gameUrl;
         public bool demo;
         public string token;
-        public decimal tokenStart, tokenMinBet, startingBet, cashout, targetDefault;
+        public decimal tokenStart, tokenMinBet, startingBet, cashout, targetDefault, houseEdge, profitTarget;
         public int winsPerRun, tokenNormal, targetNormal;
-        
-        private void LoadConfigs()
+        public TimeSpan minRunTime;
+
+
+        public void LoadConfigs()
         {
             headless = bool.Parse(ConfigurationManager.AppSettings["headless"]);
             gameUrl = ConfigurationManager.AppSettings["Slamcrash"];
@@ -28,20 +30,44 @@ namespace Scripts
             tokenStart = decimal.Parse(ConfigurationManager.AppSettings[token + "Start"]);
             tokenMinBet = decimal.Parse(ConfigurationManager.AppSettings[token + "Minbet"]);
             tokenNormal = Int32.Parse(ConfigurationManager.AppSettings[token + "Normal"]);
-            
-            winsPerRun = Convert.ToInt32(ConfigurationManager.AppSettings["winsPerRun"]);
             startingBet = decimal.Parse(ConfigurationManager.AppSettings["startingBet"]);
-            cashout = decimal.Parse(ConfigurationManager.AppSettings["cashout"]);
-            
             if (startingBet < tokenMinBet)
             {
                 startingBet = tokenMinBet;
             }
+            cashout = decimal.Parse(ConfigurationManager.AppSettings["cashout"]);
+            houseEdge = decimal.Parse(ConfigurationManager.AppSettings["houseEdge"]);
+
+            try
+            {
+                winsPerRun = Int32.Parse(ConfigurationManager.AppSettings["winsPerRun"]);
+            }
+            catch(Exception)
+            {
+                winsPerRun = (int)(200 / cashout);
+            }
+            try
+            {
+                minRunTime = TimeSpan.Parse(ConfigurationManager.AppSettings["minRunTime"]);
+            }
+            catch(Exception)
+            {
+                minRunTime = TimeSpan.Parse("01:00:00");
+            }
+            try
+            {
+                profitTarget = decimal.Parse(ConfigurationManager.AppSettings["profitTarget"]);
+            }
+            catch(Exception)
+            {
+                profitTarget = startingBet * 500;
+            }
+
+            
         }
 
         public virtual void NewBrowserSetup()
         {
-            LoadConfigs();
             ChromeOptions options = new ChromeOptions();
             if ( headless ) { options.AddArgument("--headless"); }
             driver = new ChromeDriver(options);

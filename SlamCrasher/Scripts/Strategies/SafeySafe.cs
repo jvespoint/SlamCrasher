@@ -15,7 +15,6 @@ namespace Scripts
         private void WeWon()
         {
             nextBet = startingBet;
-            ValidateBet();
         }
         private void WeLost()
         {

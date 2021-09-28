@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using OpenQA.Selenium;
 using Pages;
 using System;
 using System.Collections.Generic;
@@ -85,6 +86,7 @@ namespace Scripts
             ValidateBet();
             startingBet = nextBet;
             firstLossBet = startingBet;
+            bool weDidWin;
             //
             BeforeFirstBet();
             //
@@ -101,17 +103,26 @@ namespace Scripts
                 {
                     _slamCrash.CustomTimeout(100);
                 }
+                _slamCrash.CustomTimeout(100);
                 //
                 BeforeBet();
                 //
-                _slamCrash.CustomTimeout(50);
+                _slamCrash.CustomTimeout(100);
                 while (!_slamCrash.BetPlaced)
                 {
                     _slamCrash.Click(_slamCrash.betButtonLocator);
                 }
                 Assert.IsTrue(_slamCrash.BetPlaced);
 
-                bool weDidWin = _slamCrash.CheckForWin();
+                try
+                {
+                    weDidWin = _slamCrash.CheckForWin();
+                }
+                catch(WebDriverTimeoutException)
+                {
+                    ResetGame();
+                    weDidWin = _slamCrash.CheckForWin();
+                }
                 if (weDidWin)
                 {
                     winsSoFar++;
@@ -161,6 +172,15 @@ namespace Scripts
                 }
             }
         }
+        public void ResetGame()
+        {
+            _slamCrash.RefreshPage();
+            _slamCrash.ClearServerConnect("Game Reset");
+            lastBet = tokenStart;
+            lastTarget = targetDefault;
+            _slamCrash.InitializeTarget();
+            SetBet(nextBet, lastBet, nextTarget, lastTarget, balance);
+        }
         public void ValidateBet()
         {
             if (nextBet < tokenMinBet) { nextBet = tokenMinBet; }
@@ -190,7 +210,7 @@ namespace Scripts
                     Console.WriteLine("End condition met: Runtime");
                     return true;
                 }
-                if (profits.Sum() >= profitTarget)
+                if ((balance - startingBalance) >= profitTarget)
                 {
                     Console.WriteLine("End condition met: Profit Target");
                     return true;
@@ -263,7 +283,7 @@ namespace Scripts
             }
             else
             {
-                _slamCrash.SetBetCloseEnough(nextBet, token);
+                _slamCrash.SetBetCloseEnough(nextBet + (tokenMinBet * 5), token);
                 Console.WriteLine("Bet set with slider: " + nextBet);
             }
             int targetClicks = Convert.ToInt32((nextTarget - lastTarget) * targetNormal);
@@ -271,7 +291,7 @@ namespace Scripts
         }
         public void Simulate(bool weDidWin, Action Method, Action BeforeFirstBet, Action BeforeBet)
         {
-            startingBalance = demo ? 100.00m : 0.76m;
+            startingBalance = demo ? 100.00m : 5.0000m;
             balance = startingBalance;
             nextBet = startingBet;
             ValidateBet();
@@ -306,7 +326,7 @@ namespace Scripts
                     winStreak++;
                     decimal profit = (nextBet * nextTarget) - nextBet;
                     streakWin += profit;
-                    string toLog = winStreak + ": Bet: " + nextBet + ". Profit: " + profit;
+                    string toLog = winStreak + ": Profit: " + profit;
                     if (winStreak == 1)
                     {
                         decimal streakProfit = profit - streakLoss;
@@ -329,6 +349,10 @@ namespace Scripts
                     if (lossStreak == 1)
                     {
                         firstLossBet = nextBet;
+                    }
+                    if (lossStreak > highestLossStreak)
+                    {
+                        highestLossStreak = lossStreak;
                     }
                     Console.WriteLine(lossStreak + ": Loss: " + nextBet + ". Streak loss: " + streakLoss);
                     //

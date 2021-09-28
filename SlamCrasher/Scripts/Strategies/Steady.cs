@@ -15,11 +15,10 @@ namespace Scripts
         private void WeWon()
         {
             nextBet = startingBet;
-            ValidateBet();
         }
         private void WeLost()
         {
-            BetFromStreakProfit(OriginalWinProfit() / 2.00m);
+            BetFromStreakProfit(OriginalWinProfit() / 2.0000m);
         }
         [Test]
         public void SteadyStrategy()

@@ -210,9 +210,12 @@ namespace Pages
             {
                 if (!BetPlaced)
                 {
-                    Click(betButtonLocator);
+                    if(ElementExists(betButtonLocator))
+                    {
+                        Click(betButtonLocator);
+                    }
                 }
-                CustomTimeout(100);
+                CustomTimeout(200);
             }
             return WinIndicator;
         }

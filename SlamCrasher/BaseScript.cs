@@ -60,7 +60,7 @@ namespace Scripts
             }
             catch(Exception)
             {
-                profitTarget = startingBet * 500;
+                profitTarget = startingBet * 100;
             }
 
             

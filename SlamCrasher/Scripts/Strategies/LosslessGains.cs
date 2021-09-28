@@ -21,7 +21,6 @@ namespace Scripts
         private void WeWon()
         {
             nextBet = startingBet;
-            ValidateBet();
         }
         private decimal Extra(decimal winRatio)
         {

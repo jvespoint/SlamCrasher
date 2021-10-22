@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Configuration;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace Pages
 {
@@ -9,18 +12,72 @@ namespace Pages
     {
         public decimal crash;
         public int number;
+        
         public PreviousGame(int roundNumber, decimal crashPoint)
         {
             number = roundNumber;
             crash = crashPoint;
         }
+        public string FileFormat()
+        {
+            return number.ToString() + " " + crash.ToString();
+        }
     }
+
     public class History : BasePage
     {
         public List<PreviousGame> games;
-        public int oldestGameNumber;
-
-        public History(IWebDriver driver) : base(driver)
+        public string historyFile; //format: {round number} {crash-point}
+        public int oldestGameNumber; //oldest game shown on history tab
+        public int firstRoundEver = 1000000; //rounds before 1mil are invalid
+        public string getRoundURL = "https://slamcrash.com/history/round/";
+        public By RoundLoadedIndicator(int round) => By.XPath($"//div[text()='ROUND: #{round}']"); //when round info is diisplayed
+        public By CrashPointLocator => By.XPath("//div[@class='item-after']/span[contains(text(),'x')]"); //shown when round crashes
+        public History(IWebDriver driver, string filename) : base(driver) 
+        {
+            historyFile = filename;
+            GetLast50();
+            try
+            {
+                List<PreviousGame> gamesOnFile = ReadHistoryFile();
+                games.AddRange(gamesOnFile);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Warning: History file not found.");
+            }
+            finally
+            {
+                games = games.Distinct().ToList();
+                games = games.OrderBy(o => o.number).ToList();
+            }
+        }
+        public void CloseRoundHistoryPopup() => Click(By.XPath("//a[text()='Close']"));
+        public List<PreviousGame> ReadHistoryFile()
+        {
+            string[] lines = File.ReadAllLines(historyFile); //1000 1.25
+            List<PreviousGame> linesList = new List<PreviousGame>();
+            foreach(string line in lines)
+            {
+                string[] data = line.Split(" ");
+                linesList.Add(new PreviousGame(Int32.Parse(data[0]), decimal.Parse(data[1])));
+            }
+            linesList = linesList.OrderBy(o => o.number).ToList();
+            return linesList;
+        }
+        public void WriteHistoryFile()
+        {
+            games = games.OrderBy(o => o.number).ToList();
+            PreviousGame[] gamesArray = games.ToArray();
+            string[] gamesStringArray = new string[gamesArray.Length];
+            for(int i = 0; i < gamesArray.Length; i++)
+            {
+                string gameString = gamesArray[i].FileFormat();
+                gamesStringArray[i] = gameString;
+            }
+            File.WriteAllLines(historyFile, gamesStringArray);
+        }
+        public void GetLast50()
         {
             Click(historyButtonLocator);
             wait.Until(ready => HistoryPopupShown);
@@ -42,7 +99,7 @@ namespace Pages
                         nextGame = new PreviousGame(Convert.ToInt32(Find(By.XPath($"//div[contains(@data-game-id,'{nextGameNumber}')]")).GetAttribute("data-game-id")), decimal.Parse(Find(By.XPath($"//div[contains(@data-game-id,'{nextGameNumber}')]")).Text.Replace("x", "")));
                         attempts = 0;
                     }
-                    catch(StaleElementReferenceException)
+                    catch (StaleElementReferenceException)
                     {
                         attempts--;
                         CustomTimeout(50);
@@ -59,7 +116,6 @@ namespace Pages
             CustomTimeout(200); //for the splash screen to disappear
             Update();
         }
-
         public void Update()
         {
             int numberOfGames = games.Count;
@@ -127,6 +183,48 @@ namespace Pages
                 }
             }
         }
+        public PreviousGame GetSpecificRound(int round)
+        {
+            if (round < firstRoundEver)
+            {
+                round = firstRoundEver;
+            }
+            Goto(getRoundURL + round);
+            try
+            {
+                wait.Until(loaded => ElementExists(RoundLoadedIndicator(round)));
+            }
+            catch (UnhandledAlertException)
+            {
+                return new PreviousGame(round, 1.00m);
+            }
+            catch (TimeoutException)
+            {
+                Goto(getRoundURL + round);
+                wait.Until(loaded => ElementExists(RoundLoadedIndicator(round)));
+            }
+            CustomTimeout(500);
+            decimal crashPoint = 0.00m;
+            for(int tries = 0; tries < 3; tries++)
+            {
+                try
+                {
+                    crashPoint = decimal.Parse(Find(CrashPointLocator).Text.Replace("x", ""));
+                    break;
+                }
+                catch (WebDriverTimeoutException)
+                {
+
+                }
+            }
+            if (crashPoint == 0.00m)
+            {
+                RefreshPage();
+                CustomTimeout(1000);
+                return GetSpecificRound(round);
+            }
+            return new PreviousGame(round, crashPoint);
+        }
         public void SkipGames(int n)
         {
             int currentGame = games[^1].number;
@@ -165,7 +263,7 @@ namespace Pages
         public decimal WinRatio(int few, decimal target)
         {
             List<PreviousGame> lastFew = new List<PreviousGame>();
-            if (few != 100)
+            if (few != 1000000)
             {
                 for (int i = 1; i < few + 1; i++)
                 {
@@ -178,9 +276,54 @@ namespace Pages
             }
             decimal ratio = decimal.Round((decimal)lastFew.Count(x => x.crash > target) / lastFew.Count, 4);
             string toLog = "Ratio: " + ratio;
-            toLog += few == 100 ? " for known history." : " for last " + few + " games.";
+            toLog += few == 1000000 ? " for known history." : " for last " + few + " games.";
             Console.WriteLine(toLog);
             return ratio;
+        }
+        public int GameIdFromRoundNumber(int roundNumber) => games.FindIndex(r => r.number == roundNumber);
+        public List<int> FindMissingGames()
+        {
+            List<int> missing = Enumerable.Range(games.First().number, games.Last().number - games.First().number + 1).Except(games.Select(x => x.number)).ToList();
+            return missing;
+        }
+        public int FindFirstGap()
+        {
+            int gap = FindMissingGames()[0];
+            return gap - 1;
+        }
+        public int FindFirstLossAfter(int roundNumber, decimal target)
+        {
+            int lossIndex = games.FindIndex(GameIdFromRoundNumber(roundNumber), x => x.crash < target);
+            return games[lossIndex].number;
+        }
+        public int FindFirstWinAfter(int roundNumber, decimal target)
+        {
+            int lossIndex = games.FindIndex(GameIdFromRoundNumber(roundNumber), x => x.crash > target);
+            return games[lossIndex].number;
+        }
+        public int[] FindMaxLossStreakForTarget(decimal[] targets)
+        {
+            int firstGapNumber = FindFirstGap();
+            int[] firstLossNumbers = new int[targets.Count()];
+            int[] maxLossStreaks = new int[targets.Count()];
+            for (int i = 0; i < targets.Count(); i++)
+            {
+                firstLossNumbers[i] = FindFirstLossAfter(firstRoundEver, targets[i]);
+                while (true)
+                {
+                    int firstWinAfterLossNumber = FindFirstWinAfter(firstLossNumbers[i], targets[i]);
+                    if (firstWinAfterLossNumber > firstGapNumber) { break; }
+
+                    int thisLossStreak = firstWinAfterLossNumber - firstLossNumbers[i];
+                    if (thisLossStreak > maxLossStreaks[i])
+                    {
+                        maxLossStreaks[i] = thisLossStreak;
+                    }
+                    firstLossNumbers[i] = FindFirstLossAfter(firstWinAfterLossNumber, targets[i]);
+                }
+                Console.WriteLine($"Made it to round {firstLossNumbers[i]} before a gap. Max loss streak for target of {targets[i]}x is {maxLossStreaks[i]} (Ratio: {maxLossStreaks[i] / targets[i]})");
+            }
+            return maxLossStreaks;
         }
     }
 }

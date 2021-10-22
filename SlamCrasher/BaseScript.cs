@@ -8,19 +8,17 @@ namespace Scripts
     public class BaseScript
     {
         public IWebDriver driver;
-        public bool headless;
-        public string gameUrl;
-        public bool demo;
-        public string token;
+        public bool headless, demo;
+        public string gameUrl, token, historyFile;
         public decimal tokenStart, tokenMinBet, startingBet, cashout, targetDefault, houseEdge, profitTarget;
         public int winsPerRun, tokenNormal, targetNormal;
         public TimeSpan minRunTime;
-
-
+        
         public void LoadConfigs()
         {
             headless = bool.Parse(ConfigurationManager.AppSettings["headless"]);
             gameUrl = ConfigurationManager.AppSettings["Slamcrash"];
+            historyFile = ConfigurationManager.AppSettings["historyFile"];
             demo = bool.Parse(ConfigurationManager.AppSettings["demoMode"]);
 
             targetDefault = decimal.Parse(ConfigurationManager.AppSettings["targetDefault"]);

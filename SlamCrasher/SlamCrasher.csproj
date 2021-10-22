@@ -7,12 +7,16 @@
 
   <ItemGroup>
     <None Remove="chromedriver.exe" />
+    <None Remove="history.txt" />
     <None Remove="testhost.dll.config" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="chromedriver.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="history.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="testhost.dll.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -21,6 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NUnit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />

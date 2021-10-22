@@ -68,6 +68,7 @@ namespace Scripts
             }
             if (endSimulation == false)
             {
+                _history.WriteHistoryFile();
                 TearDown();
             }
         }
@@ -79,6 +80,7 @@ namespace Scripts
             _slamCrash.ClearServerConnect("Inital Load");
             _slamCrash.wait.Until(readyToLogin => _slamCrash.ReadyForLogin);
             _slamCrash.Login(demo, token);
+            _history = new History(driver, historyFile);
 
             balance = _slamCrash.GetBalance(token);
             startingBalance = balance;
@@ -106,6 +108,7 @@ namespace Scripts
                 _slamCrash.CustomTimeout(100);
                 //
                 BeforeBet();
+                _history.Update();
                 //
                 _slamCrash.CustomTimeout(100);
                 while (!_slamCrash.BetPlaced)

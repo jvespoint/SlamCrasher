@@ -16,12 +16,12 @@ namespace Scripts
             _slamCrash.wait.Until(readyToLogin => _slamCrash.ReadyForLogin);
             _history = new History(driver, historyFile);
 
-            int firstGapStart = _history.FindFirstGap();
+            int firstGapStart = _history.GameIdFromRoundNumber(_history.FindFirstGap());
             while (firstGapStart != _history.games.Count - 1) 
             {
                 FillGap(firstGapStart);
                 _history.WriteHistoryFile();
-                firstGapStart = _history.FindFirstGap();
+                firstGapStart = _history.GameIdFromRoundNumber(_history.FindFirstGap());
             }
         }
         public void FillGap(int gapStart)

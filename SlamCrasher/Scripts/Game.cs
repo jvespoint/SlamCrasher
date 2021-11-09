@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Interactions;
 using Pages;
 using System;
 using System.Collections.Generic;
@@ -289,12 +290,26 @@ namespace Scripts
                 _slamCrash.SetBetCloseEnough(nextBet + (tokenMinBet * 5), token);
                 Console.WriteLine("Bet set with slider: " + nextBet);
             }
-            int targetClicks = Convert.ToInt32((nextTarget - lastTarget) * targetNormal);
-            _slamCrash.IncrementButtons(targetClicks, false);
+            if (nextTarget != lastTarget)
+            {
+                if (nextTarget % 0.10m != 0 || nextTarget > 12.00m || lastTarget % 0.10m != 0)
+                {
+                    var elem = _slamCrash.Find(_slamCrash.autoCashoutLocator);
+                    elem.Click();
+                    string targetStripped = nextTarget.ToString().Replace(".", "");
+                    elem.SendKeys(targetStripped);
+                    elem.SendKeys(Keys.Left + Keys.Left + "." + Keys.Enter);
+                }
+                else
+                {
+                    int targetClicks = Convert.ToInt32((nextTarget - lastTarget) * targetNormal);
+                    _slamCrash.IncrementButtons(targetClicks, false);
+                }
+            }
         }
         public void Simulate(bool weDidWin, Action Method, Action BeforeFirstBet, Action BeforeBet)
         {
-            startingBalance = demo ? 100.00m : 5.0000m;
+            startingBalance = demo ? 100.00m : 3.00m;
             balance = startingBalance;
             nextBet = startingBet;
             ValidateBet();
@@ -403,7 +418,7 @@ namespace Scripts
             }
             decimal oneInHowMany = 1.00m / chanceOfThisLoss;
             Console.WriteLine("Chance of this loss: " + decimal.Round(chanceOfThisLoss * 100m, 10) + "% or 1 in " + decimal.Round(oneInHowMany, 6));
-            Console.WriteLine("Chance of this win: " + decimal.Round(chanceOfThisWin * 100m, 10) + "% or 1 in " + decimal.Round(1.00m / chanceOfThisWin, 6));
+            //Console.WriteLine("Chance of this win: " + decimal.Round(chanceOfThisWin * 100m, 10) + "% or 1 in " + decimal.Round(1.00m / chanceOfThisWin, 6));
             Console.WriteLine("Expected to win " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio(), 2) + " games before reaching this loss.");
             Console.WriteLine("Average profit: " + decimal.Round(profits.Average(), 10));
             Console.WriteLine("Expected to profit " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio() * profits.Average(), 10) + " before reaching this loss.");

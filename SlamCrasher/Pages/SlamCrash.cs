@@ -32,6 +32,7 @@ namespace Pages
         private readonly string plusButtonLocator = "(//div[@class='stepper-button-plus'])";
         private readonly string minusButtonLocator = "(//div[@class='stepper-button-minus'])";
         private readonly By sendingBetLocator = By.XPath("//span[text()='Sending Bet... ']");
+        public readonly By autoCashoutLocator = By.XPath("(//input)[2]");
         private readonly By cashoutButtonLocator = By.XPath("//span[contains(text(),'Cash Out: ')]");
         private readonly By lossIndicatorLocator = By.XPath("//span[contains(text(),'You lost')]");
         private readonly By winIndicatorLocator = By.XPath("//span[text()='Cashed Out @  ']");

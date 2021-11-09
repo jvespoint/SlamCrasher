@@ -23,7 +23,19 @@ namespace Pages
             return number.ToString() + " " + crash.ToString();
         }
     }
+    class ItemEqualityComparer : IEqualityComparer<PreviousGame>
+    {
+        public bool Equals(PreviousGame x, PreviousGame y)
+        {
+            // Two items are equal if their keys are equal.
+            return x.number == y.number;
+        }
 
+        public int GetHashCode(PreviousGame obj)
+        {
+            return obj.number.GetHashCode();
+        }
+    }
     public class History : BasePage
     {
         public List<PreviousGame> games;
@@ -48,7 +60,7 @@ namespace Pages
             }
             finally
             {
-                games = games.Distinct().ToList();
+                games = games.Distinct(new ItemEqualityComparer()).ToList();
                 games = games.OrderBy(o => o.number).ToList();
             }
         }
@@ -62,7 +74,6 @@ namespace Pages
                 string[] data = line.Split(" ");
                 linesList.Add(new PreviousGame(Int32.Parse(data[0]), decimal.Parse(data[1])));
             }
-            linesList = linesList.OrderBy(o => o.number).ToList();
             return linesList;
         }
         public void WriteHistoryFile()
@@ -198,14 +209,14 @@ namespace Pages
             {
                 return new PreviousGame(round, 1.00m);
             }
-            catch (TimeoutException)
+            catch (WebDriverTimeoutException)
             {
-                Goto(getRoundURL + round);
+                RefreshPage();
                 wait.Until(loaded => ElementExists(RoundLoadedIndicator(round)));
             }
             CustomTimeout(500);
             decimal crashPoint = 0.00m;
-            for(int tries = 0; tries < 3; tries++)
+            for(int tries = 0; tries < 5; tries++)
             {
                 try
                 {
@@ -221,7 +232,7 @@ namespace Pages
             {
                 RefreshPage();
                 CustomTimeout(1000);
-                return GetSpecificRound(round);
+                return new PreviousGame(round, 1.001m);
             }
             return new PreviousGame(round, crashPoint);
         }
@@ -288,8 +299,9 @@ namespace Pages
         }
         public int FindFirstGap()
         {
-            int gap = FindMissingGames()[0];
-            return gap - 1;
+            int gap = FindMissingGames()[0] - 1;
+            Console.WriteLine($"Made it to round {gap} before a gap.");
+            return gap;
         }
         public int FindFirstLossAfter(int roundNumber, decimal target)
         {
@@ -306,6 +318,7 @@ namespace Pages
             int firstGapNumber = FindFirstGap();
             int[] firstLossNumbers = new int[targets.Count()];
             int[] maxLossStreaks = new int[targets.Count()];
+            int[] maxLossStreakIndexes = new int[targets.Count()];
             for (int i = 0; i < targets.Count(); i++)
             {
                 firstLossNumbers[i] = FindFirstLossAfter(firstRoundEver, targets[i]);
@@ -318,10 +331,11 @@ namespace Pages
                     if (thisLossStreak > maxLossStreaks[i])
                     {
                         maxLossStreaks[i] = thisLossStreak;
+                        maxLossStreakIndexes[i] = firstLossNumbers[i];
                     }
                     firstLossNumbers[i] = FindFirstLossAfter(firstWinAfterLossNumber, targets[i]);
                 }
-                Console.WriteLine($"Made it to round {firstLossNumbers[i]} before a gap. Max loss streak for target of {targets[i]}x is {maxLossStreaks[i]} (Ratio: {maxLossStreaks[i] / targets[i]})");
+                Console.WriteLine($"Max losses for {targets[i]}x is {maxLossStreaks[i]} @  #{maxLossStreakIndexes[i]} (S/T: {maxLossStreaks[i] / targets[i]})");
             }
             return maxLossStreaks;
         }

@@ -97,9 +97,9 @@ namespace Scripts
             while (!CheckForEnd())
             {
                 Console.WriteLine("Balance: " + balance);
-                
+                lastBet = _slamCrash.GetBet();
                 SetBet(nextBet, lastBet, nextTarget, lastTarget, balance);
-                lastBet = nextBet;
+                
                 lastTarget = nextTarget;
 
                 while (_slamCrash.WinIndicator || _slamCrash.LossIndicator)
@@ -243,62 +243,71 @@ namespace Scripts
         }
         public void SetBet(decimal nextBet, decimal lastBet, decimal nextTarget, decimal lastTarget, decimal balance)
         {
-            int maxClicks = 50;
-            List<int> diffs = new List<int>{
-                Convert.ToInt32(tokenNormal * (nextBet - lastBet)),            //0: Last
-                Convert.ToInt32(tokenNormal * (nextBet - tokenMinBet)),        //1: Min
-                Convert.ToInt32(tokenNormal * (nextBet - balance)),            //2: Max
-                Convert.ToInt32(tokenNormal * (nextBet - (balance / 4))),      //3: 25%
-                Convert.ToInt32(tokenNormal * (nextBet - (balance / 2))),      //4: 50%
-                Convert.ToInt32(tokenNormal * (nextBet - (3 * (balance / 4)))) //5: 75%
-            };
-            int minClicks = diffs.Min(x => Math.Abs(x));
-            if (Math.Abs(minClicks) < maxClicks)
+            if (nextBet != lastBet)
             {
-                if (Math.Abs(diffs[0]) < (maxClicks + 30)) //Always better to increment from last bet
+                int maxClicks = 50;
+                List<int> diffs = new List<int>{
+                    Convert.ToInt32(tokenNormal * (nextBet - lastBet)),            //0: Last
+                    Convert.ToInt32(tokenNormal * (nextBet - tokenMinBet)),        //1: Min
+                    Convert.ToInt32(tokenNormal * (nextBet - balance)),            //2: Max
+                    Convert.ToInt32(tokenNormal * (nextBet - (balance / 4))),      //3: 25%
+                    Convert.ToInt32(tokenNormal * (nextBet - (balance / 2))),      //4: 50%
+                    Convert.ToInt32(tokenNormal * (nextBet - (3 * (balance / 4)))) //5: 75%
+                };
+                int minClicks = diffs.Min(x => Math.Abs(x));
+                if (Math.Abs(minClicks) < maxClicks)
                 {
-                    _slamCrash.IncrementButtons(diffs[0], true);
-                    //Console.WriteLine("Bet set from last bet: " + nextBet);
+                    if (Math.Abs(diffs[0]) < (maxClicks + 30)) //Always better to increment from last bet
+                    {
+                        _slamCrash.IncrementButtons(diffs[0], true);
+                        //Console.WriteLine("Bet set from last bet: " + nextBet);
+                    }
+                    else
+                    {
+                        if (minClicks == Math.Abs(diffs[1]))
+                        {
+                            _slamCrash.SetBetToMin();
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            Console.WriteLine("Bet set from minimum: " + nextBet);
+                        }
+                        else if (minClicks == Math.Abs(diffs[2]))
+                        {
+                            _slamCrash.SetBetToMax();
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            Console.WriteLine("Bet set from maximum: " + nextBet);
+                        }
+                        else if (minClicks == Math.Abs(diffs[3]))
+                        {
+                            _slamCrash.SetBetTo25();
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            Console.WriteLine("Bet set from 25%: " + nextBet);
+                        }
+                        else if (minClicks == Math.Abs(diffs[4]))
+                        {
+                            _slamCrash.SetBetTo50();
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            Console.WriteLine("Bet set from 50%: " + nextBet);
+                        }
+                        else if (minClicks == Math.Abs(diffs[5]))
+                        {
+                            _slamCrash.SetBetTo75();
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            Console.WriteLine("Bet set from 75%: " + nextBet);
+                        }
+                    }
                 }
-                else if (minClicks == Math.Abs(diffs[1]))
+                else
                 {
-                    _slamCrash.SetBetToMin();
-                    _slamCrash.IncrementButtons(diffs[1], true);
-                    Console.WriteLine("Bet set from minimum: " + nextBet);
-                }
-                else if (minClicks == Math.Abs(diffs[2]))
-                {
-                    _slamCrash.SetBetToMax();
-                    _slamCrash.IncrementButtons(diffs[2], true);
-                    Console.WriteLine("Bet set from maximum: " + nextBet);
-                }
-                else if (minClicks == Math.Abs(diffs[3]))
-                {
-                    _slamCrash.SetBetTo25();
-                    _slamCrash.IncrementButtons(diffs[3], true);
-                    Console.WriteLine("Bet set from 25%: " + nextBet);
-                }
-                else if (minClicks == Math.Abs(diffs[4]))
-                {
-                    _slamCrash.SetBetTo50();
-                    _slamCrash.IncrementButtons(diffs[4], true);
-                    Console.WriteLine("Bet set from 50%: " + nextBet);
-                }
-                else if (minClicks == Math.Abs(diffs[5]))
-                {
-                    _slamCrash.SetBetTo75();
-                    _slamCrash.IncrementButtons(diffs[5], true);
-                    Console.WriteLine("Bet set from 75%: " + nextBet);
+                    _slamCrash.SetBetCloseEnough(nextBet + (tokenMinBet * 5), token);
+                    _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                    Console.WriteLine("Bet set with slider: " + nextBet);
                 }
             }
-            else
+
+            decimal currentTarget = Decimal.Parse(_slamCrash.Find(_slamCrash.autoCashoutLocator).GetAttribute("value").Replace("x",""));
+            if (nextTarget != currentTarget)
             {
-                _slamCrash.SetBetCloseEnough(nextBet + (tokenMinBet * 5), token);
-                Console.WriteLine("Bet set with slider: " + nextBet);
-            }
-            if (nextTarget != lastTarget)
-            {
-                if (nextTarget % 0.10m != 0 || nextTarget > 12.00m || lastTarget % 0.10m != 0)
+                if (nextTarget % 0.10m != 0 || Math.Abs(nextTarget - currentTarget) > 10.00m || lastTarget % 0.10m != 0)
                 {
                     var elem = _slamCrash.Find(_slamCrash.autoCashoutLocator);
                     elem.Click();
@@ -308,7 +317,7 @@ namespace Scripts
                 }
                 else
                 {
-                    int targetClicks = Convert.ToInt32((nextTarget - lastTarget) * targetNormal);
+                    int targetClicks = Convert.ToInt32((nextTarget - currentTarget) * targetNormal);
                     _slamCrash.IncrementButtons(targetClicks, false);
                 }
             }

@@ -130,6 +130,10 @@ namespace Pages
             }
             return decimal.Parse(balanceString);
         }
+        public decimal GetBet()
+        {
+            return Decimal.Parse(Find(By.XPath("(//input)[1]")).GetAttribute("value").ToString().Replace("SLAM", "").Replace("BNB", "").Replace("M", "").Trim());
+        }
         public void InitializeTarget()
         {
             IncrementButtons(1, false);

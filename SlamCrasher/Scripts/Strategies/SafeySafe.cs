@@ -10,7 +10,11 @@ namespace Scripts
         }
         private void BeforeBet()
         {
-            
+            _history.WaitForLosses(2, 1.50m);
+        }
+        private void SimBeforeBet()
+        {
+            //_history.WaitForLosses(2, 1.50m);
         }
         private void WeWon()
         {
@@ -29,7 +33,7 @@ namespace Scripts
         [Test]
         public void SimulateLosses()
         {
-            Simulate(false, WeLost, BeforeFirstBet, BeforeBet);
+            Simulate(false, WeLost, BeforeFirstBet, SimBeforeBet);
         }
         [Test]
         public void SimulateWins()

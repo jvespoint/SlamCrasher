@@ -108,8 +108,8 @@ namespace Scripts
                 }
                 _slamCrash.CustomTimeout(100);
                 //
-                BeforeBet();
                 _history.Update();
+                BeforeBet();
                 //
                 _slamCrash.CustomTimeout(100);
                 while (!_slamCrash.BetPlaced)
@@ -129,6 +129,7 @@ namespace Scripts
                 }
                 if (weDidWin)
                 {
+                    Console.Beep(220,1000);
                     winsSoFar++;
                     winStreak++;
                     decimal profit = (nextBet * nextTarget) - nextBet;
@@ -150,6 +151,11 @@ namespace Scripts
                 else
                 {
                     lossStreak++;
+                    for (int i = lossStreak; i>0; i--)
+                    {
+                        Console.Beep(440, 500);
+                        _slamCrash.CustomTimeout(100);
+                    }
                     streakLoss += nextBet;
                     winStreak = 0;
                     streakWin = 0.00m;
@@ -309,12 +315,13 @@ namespace Scripts
         }
         public void Simulate(bool weDidWin, Action Method, Action BeforeFirstBet, Action BeforeBet)
         {
-            startingBalance = demo ? 100.00m : 3.00m;
+            startingBalance = demo ? 100.00m : 2.1830m;
             balance = startingBalance;
             nextBet = startingBet;
             ValidateBet();
             startingBet = nextBet;
-            lastBet = tokenStart;
+            lastBet = demo ? tokenStart : 0.01m;
+            
             firstLossBet = startingBet;
             //
             BeforeFirstBet();

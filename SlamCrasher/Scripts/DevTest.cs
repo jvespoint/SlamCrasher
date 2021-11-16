@@ -17,7 +17,7 @@ namespace Scripts
             _history = new History(driver, historyFile);
             _slamCrash.Login(true, token);
             token = "slam";
-            decimal[] targetsToCheck = new decimal[] { 2.00m, 3.00m, 4.00m, 5.00m, 6.00m, 7.00m, 8.00m, 9.00m };
+            decimal[] targetsToCheck = new decimal[] { 1.50m };
             _history.FindMaxLossStreakForTarget(targetsToCheck);
         }
     }

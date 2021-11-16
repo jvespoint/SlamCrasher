@@ -310,7 +310,7 @@ namespace Pages
         }
         public int FindFirstWinAfter(int roundNumber, decimal target)
         {
-            int lossIndex = games.FindIndex(GameIdFromRoundNumber(roundNumber), x => x.crash > target);
+            int lossIndex = games.FindIndex(GameIdFromRoundNumber(roundNumber), x => x.crash >= target);
             return games[lossIndex].number;
         }
         public int[] FindMaxLossStreakForTarget(decimal[] targets)

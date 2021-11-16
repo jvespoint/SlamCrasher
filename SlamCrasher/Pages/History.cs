@@ -79,6 +79,7 @@ namespace Pages
         public void WriteHistoryFile()
         {
             games = games.OrderBy(o => o.number).ToList();
+            games = games.Distinct(new ItemEqualityComparer()).ToList();
             PreviousGame[] gamesArray = games.ToArray();
             string[] gamesStringArray = new string[gamesArray.Length];
             for(int i = 0; i < gamesArray.Length; i++)

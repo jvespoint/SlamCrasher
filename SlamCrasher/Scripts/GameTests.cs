@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using Pages;
+using System;
 
 namespace Scripts
 {
@@ -17,14 +18,18 @@ namespace Scripts
             _slamCrash.Login(true, token);
             token = "slam";
             _slamCrash.InitializeTarget();
-            
-            SetBet(0.64m, 1.00m, 1.05m, 2.00m, 100.00m);
+            //
+            betInputPath = 1;
+            cashoutInputPath = 2;
+            tokenNormal = 100; //slam
+            //
+            SetBet(0.64m, 1.05m, 100.00m);
             _history.SkipGames(1);
-            SetBet(1.28m, 0.64m, 1.10m, 1.05m, 100.00m);
+            SetBet(1.28m, 1.10m, 100.00m);
             _history.SkipGames(1);
-            SetBet(2.56m, 1.00m, 2.00m, 1.10m, 100.00m);
+            SetBet(2.56m, 2.00m, 100.00m);
             _history.SkipGames(1);
-            SetBet(5.20m, 2.56m, 20.00m, 2.00m, 100.00m);
+            SetBet(5.20m, 20.00m, 100.00m);
             //_history.SkipGames(1);
             //SetBet(50.20m, 5.00m, 2.00m, 2.00m, 100.00m);
             //_history.SkipGames(1);

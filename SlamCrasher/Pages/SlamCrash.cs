@@ -130,9 +130,12 @@ namespace Pages
             }
             return decimal.Parse(balanceString);
         }
-        public decimal GetBet()
+        public decimal GetBet(int index)
         {
-            return Decimal.Parse(Find(By.XPath("(//input)[1]")).GetAttribute("value").ToString().Replace("SLAM", "").Replace("BNB", "").Replace("M", "").Trim());
+            decimal toReturn;
+            string betString = Find(By.XPath($"(//input)[{index}]")).GetAttribute("value").ToString().Replace("SLAM", "").Replace("BNB", "").Replace("M", "").Trim();
+            Decimal.TryParse(betString, out toReturn);
+            return toReturn;
         }
         public void InitializeTarget()
         {

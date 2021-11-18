@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 
 namespace Scripts
 {
@@ -28,15 +29,17 @@ namespace Scripts
         }
         private void BeforeFirstBet()
         {
-            waitFor = (_history.FindMaxLossStreakForTarget(new decimal[] { cashout })[0] - CanLose(balance, nextBet)) + 1;
+            int maxLosses = _history.FindMaxLossStreakForTarget(new decimal[] { cashout })[0];
+            waitFor = (maxLosses - CanLose(balance, nextBet));
+            Console.WriteLine($"CalcSafe Start-up Complete: Wait for {waitFor} losses before betting.");
         }
         private void BeforeBet()
         {
-            _history.WaitForLosses(waitFor, 1.50m);
+            _history.WaitForLosses(waitFor, cashout);
         }
         private void SimBeforeBet()
         {
-            //_history.WaitForLosses(2, 1.50m);
+
         }
         private void WeWon()
         {

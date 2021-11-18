@@ -97,9 +97,12 @@ namespace Scripts
             while (!CheckForEnd())
             {
                 Console.WriteLine("Balance: " + balance);
-                lastBet = _slamCrash.GetBet();
-                SetBet(nextBet, lastBet, nextTarget, lastTarget, balance);
+
                 
+                SetBet(nextBet, nextTarget, balance);
+
+                lastBet = _slamCrash.GetBet(betInputPath);
+                Assert.IsTrue(nextBet == lastBet);
                 lastTarget = nextTarget;
 
                 while (_slamCrash.WinIndicator || _slamCrash.LossIndicator)
@@ -151,11 +154,19 @@ namespace Scripts
                 else
                 {
                     lossStreak++;
-                    for (int i = lossStreak; i>0; i--)
+                    if (lossStreak > 3)
+                    {
+                        for (int i = 3; i > 0; i--)
+                        {
+                            Console.Beep(440, 300);
+                            _slamCrash.CustomTimeout(75);
+                        }
+                    } 
+                    else
                     {
                         Console.Beep(440, 500);
-                        _slamCrash.CustomTimeout(100);
                     }
+                    
                     streakLoss += nextBet;
                     winStreak = 0;
                     streakWin = 0.00m;
@@ -189,7 +200,7 @@ namespace Scripts
             lastBet = tokenStart;
             lastTarget = targetDefault;
             _slamCrash.InitializeTarget();
-            SetBet(nextBet, lastBet, nextTarget, lastTarget, balance);
+            SetBet(nextBet, nextTarget, balance);
         }
         public void ValidateBet()
         {
@@ -241,13 +252,14 @@ namespace Scripts
         {
             BetFromProfit(streakLoss + streakProfit);
         }
-        public void SetBet(decimal nextBet, decimal lastBet, decimal nextTarget, decimal lastTarget, decimal balance)
+        public void SetBet(decimal nextBet, decimal nextTarget, decimal balance)
         {
-            if (nextBet != lastBet)
+            decimal currentBet = _slamCrash.GetBet(betInputPath);
+            if (nextBet != currentBet)
             {
                 int maxClicks = 50;
                 List<int> diffs = new List<int>{
-                    Convert.ToInt32(tokenNormal * (nextBet - lastBet)),            //0: Last
+                    Convert.ToInt32(tokenNormal * (nextBet - currentBet)),         //0: Last
                     Convert.ToInt32(tokenNormal * (nextBet - tokenMinBet)),        //1: Min
                     Convert.ToInt32(tokenNormal * (nextBet - balance)),            //2: Max
                     Convert.ToInt32(tokenNormal * (nextBet - (balance / 4))),      //3: 25%
@@ -267,31 +279,31 @@ namespace Scripts
                         if (minClicks == Math.Abs(diffs[1]))
                         {
                             _slamCrash.SetBetToMin();
-                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                             Console.WriteLine("Bet set from minimum: " + nextBet);
                         }
                         else if (minClicks == Math.Abs(diffs[2]))
                         {
                             _slamCrash.SetBetToMax();
-                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                             Console.WriteLine("Bet set from maximum: " + nextBet);
                         }
                         else if (minClicks == Math.Abs(diffs[3]))
                         {
                             _slamCrash.SetBetTo25();
-                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                             Console.WriteLine("Bet set from 25%: " + nextBet);
                         }
                         else if (minClicks == Math.Abs(diffs[4]))
                         {
                             _slamCrash.SetBetTo50();
-                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                             Console.WriteLine("Bet set from 50%: " + nextBet);
                         }
                         else if (minClicks == Math.Abs(diffs[5]))
                         {
                             _slamCrash.SetBetTo75();
-                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                            _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                             Console.WriteLine("Bet set from 75%: " + nextBet);
                         }
                     }
@@ -299,17 +311,17 @@ namespace Scripts
                 else
                 {
                     _slamCrash.SetBetCloseEnough(nextBet + (tokenMinBet * 5), token);
-                    _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet())), true);
+                    _slamCrash.IncrementButtons(Convert.ToInt32(tokenNormal * (nextBet - _slamCrash.GetBet(betInputPath))), true);
                     Console.WriteLine("Bet set with slider: " + nextBet);
                 }
             }
 
-            decimal currentTarget = Decimal.Parse(_slamCrash.Find(_slamCrash.autoCashoutLocator).GetAttribute("value").Replace("x",""));
+            decimal currentTarget = Decimal.Parse(_slamCrash.Find(By.XPath($"(//input)[{cashoutInputPath}]")).GetAttribute("value").Replace("x",""));
             if (nextTarget != currentTarget)
             {
-                if (nextTarget % 0.10m != 0 || Math.Abs(nextTarget - currentTarget) > 10.00m || lastTarget % 0.10m != 0)
+                if (nextTarget % 0.10m != 0 || Math.Abs(nextTarget - currentTarget) > 10.00m || currentTarget % 0.10m != 0)
                 {
-                    var elem = _slamCrash.Find(_slamCrash.autoCashoutLocator);
+                    var elem = _slamCrash.Find(By.XPath($"(//input)[{cashoutInputPath}]"));
                     elem.Click();
                     string targetStripped = nextTarget.ToString().Replace(".", "");
                     elem.SendKeys(targetStripped);

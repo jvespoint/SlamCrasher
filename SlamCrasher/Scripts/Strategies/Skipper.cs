@@ -29,10 +29,11 @@ namespace Scripts
         }
         private void BeforeFirstBet()
         {
-            //int maxLosses = _history.FindMaxLossStreakForTarget(new decimal[] { cashout })[0];
-            int maxLosses = 10;
-            waitFor = (maxLosses - CanLose(balance, nextBet));
-            Console.WriteLine($"waitFor: {waitFor} losses before betting.");
+            cashout = 1.50m;
+            nextTarget = cashout;
+            ValidateBet();
+            waitFor = 2;
+            Console.WriteLine($"Skipper Strategy: {waitFor} losses before betting. Never change the bet amount.");
         }
         private void BeforeBet()
         {
@@ -40,16 +41,19 @@ namespace Scripts
         }
         private void SimBeforeBet()
         {
-            //_history.WaitForLosses(2, 1.50m);
+            
         }
         private void WeWon()
         {
-            nextBet = startingBet;
+            
         }
         private void WeLost()
         {
-            BetFromStreakProfit(tokenMinBet);
             _history.SkipGames(2);
+        }
+        private void SimWeLost()
+        {
+            //_history.SkipGames(2);
         }
         [Test]
         public void SkipperStrategy()
@@ -60,7 +64,7 @@ namespace Scripts
         [Test]
         public void SimulateLosses()
         {
-            Simulate(false, WeLost, BeforeFirstBet, SimBeforeBet);
+            Simulate(false, SimWeLost, BeforeFirstBet, SimBeforeBet);
         }
         [Test]
         public void SimulateWins()

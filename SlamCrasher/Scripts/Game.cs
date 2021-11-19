@@ -444,7 +444,15 @@ namespace Scripts
                 chanceOfThisLoss *= chanceOfOneLoss;
                 chanceOfThisWin += chanceOfOneWin;
             }
-            decimal oneInHowMany = 1.00m / chanceOfThisLoss;
+            decimal oneInHowMany;
+            try
+            {
+                oneInHowMany = 1.00m / chanceOfThisLoss;
+            }
+            catch(Exception ex)
+            {
+                oneInHowMany = 1000000000000m;
+            }
             Console.WriteLine("Chance of this loss: " + decimal.Round(chanceOfThisLoss * 100m, 10) + "% or 1 in " + decimal.Round(oneInHowMany, 6));
             //Console.WriteLine("Chance of this win: " + decimal.Round(chanceOfThisWin * 100m, 10) + "% or 1 in " + decimal.Round(1.00m / chanceOfThisWin, 6));
             Console.WriteLine("Expected to win " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio(), 2) + " games before reaching this loss.");

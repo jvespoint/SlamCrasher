@@ -98,7 +98,6 @@ namespace Scripts
             {
                 Console.WriteLine("Balance: " + balance);
 
-                
                 SetBet(nextBet, nextTarget, balance);
 
                 lastBet = _slamCrash.GetBet(betInputPath);

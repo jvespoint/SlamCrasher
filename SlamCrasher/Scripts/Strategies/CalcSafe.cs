@@ -16,7 +16,7 @@ namespace Scripts
             {
                 loss += bet;
                 bal -= bet;
-                bet = (loss + tokenMinBet) / (cashout - 1m);
+                bet = (loss + tokenMinBet) / (cashout - 1m); // same as BetFromStreakLoss()
                 if ((bal - bet) <= 0)
                 {
                     return count + 1;
@@ -31,7 +31,7 @@ namespace Scripts
         {
             int maxLosses = _history.FindMaxLossStreakForTarget(new decimal[] { cashout })[0];
             waitFor = (maxLosses - CanLose(balance, nextBet));
-            Console.WriteLine($"CalcSafe Start-up Complete: Wait for {waitFor} losses before betting.");
+            Console.WriteLine($"CalcSafe Start-up Complete: Wait for {waitFor} losses before betting at an auto-cashout of {cashout}.");
         }
         private void BeforeBet()
         {
@@ -47,7 +47,7 @@ namespace Scripts
         }
         private void WeLost()
         {
-            BetFromStreakProfit(tokenMinBet);
+            BetFromStreakProfit(tokenMinBet); //see CanLose()
         }
         [Test]
         public void CalcSafeStrategy()

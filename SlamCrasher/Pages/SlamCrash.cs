@@ -141,7 +141,7 @@ namespace Pages
         {
             IncrementButtons(1, false);
             IncrementButtons(-1, false);
-            Console.WriteLine("Target Initialized: 2.00x");
+            Console.WriteLine("Target Initialized.");
         }
         public void IncrementButtons(int times, bool bet)
         {

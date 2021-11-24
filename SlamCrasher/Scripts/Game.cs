@@ -152,20 +152,8 @@ namespace Scripts
                 }
                 else
                 {
+                    Console.Beep(440, 300);
                     lossStreak++;
-                    if (lossStreak > 3)
-                    {
-                        for (int i = 3; i > 0; i--)
-                        {
-                            Console.Beep(440, 300);
-                            _slamCrash.CustomTimeout(75);
-                        }
-                    } 
-                    else
-                    {
-                        Console.Beep(440, 500);
-                    }
-                    
                     streakLoss += nextBet;
                     winStreak = 0;
                     streakWin = 0.00m;
@@ -315,6 +303,7 @@ namespace Scripts
                 }
             }
 
+            _slamCrash.InitializeTarget();
             decimal currentTarget = Decimal.Parse(_slamCrash.Find(By.XPath($"(//input)[{cashoutInputPath}]")).GetAttribute("value").Replace("x",""));
             if (nextTarget != currentTarget)
             {
@@ -450,13 +439,9 @@ namespace Scripts
             }
             catch(Exception ex)
             {
-                oneInHowMany = 1000000000000m;
+                oneInHowMany = 100000000000000m;
             }
             Console.WriteLine("Chance of this loss: " + decimal.Round(chanceOfThisLoss * 100m, 10) + "% or 1 in " + decimal.Round(oneInHowMany, 6));
-            //Console.WriteLine("Chance of this win: " + decimal.Round(chanceOfThisWin * 100m, 10) + "% or 1 in " + decimal.Round(1.00m / chanceOfThisWin, 6));
-            Console.WriteLine("Expected to win " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio(), 2) + " games before reaching this loss.");
-            Console.WriteLine("Average profit: " + decimal.Round(profits.Average(), 10));
-            Console.WriteLine("Expected to profit " + decimal.Round(oneInHowMany * ExpectedAverageWinRatio() * profits.Average(), 10) + " before reaching this loss.");
         }
     }
 }

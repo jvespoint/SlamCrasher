@@ -194,6 +194,8 @@ namespace Pages
                     CustomTimeout(200); //for the splash screen to disappear
                 }
             }
+            games = games.Distinct(new ItemEqualityComparer()).ToList();
+            games = games.OrderBy(o => o.number).ToList();
         }
         public PreviousGame GetSpecificRound(int round)
         {

@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using OpenQA.Selenium;
 using System;
 
 namespace Scripts
@@ -16,6 +17,14 @@ namespace Scripts
             {
                 //The numberOfGames values have been pre-calculated. Please confirm these are still safe!
                 decimal targ = 0.00m;
+                if (_history.LastGamesLoss(2, 1.10m))
+                {
+                    targ = 1.10m;
+                }
+                if (_history.LastGamesLoss(3, 1.20m))
+                {
+                    targ = 1.20m;
+                }
                 if (_history.LastGamesLoss(4, 1.50m))
                 {
                     targ = 1.50m;
@@ -36,7 +45,7 @@ namespace Scripts
                 {
                     targ = 5.00m;
                 }
-                if (_history.LastGamesLoss(36, 7.00m))
+                if (_history.LastGamesLoss(36, 6.00m))
                 {
                     targ = 6.00m;
                 }
@@ -44,11 +53,11 @@ namespace Scripts
                 {
                     targ = 7.00m;
                 }
-                if (_history.LastGamesLoss(51, 7.00m))
+                if (_history.LastGamesLoss(51, 8.00m))
                 {
                     targ = 8.00m;
                 }
-                if (_history.LastGamesLoss(59, 7.00m))
+                if (_history.LastGamesLoss(59, 9.00m))
                 {
                     targ = 9.00m;
                 }
@@ -126,8 +135,18 @@ namespace Scripts
                 }
                 else
                 {
-                    _history.SkipGames(1);
-                    BeforeBet();
+                    try
+                    {
+                        _history.SkipGames(1);
+                    }
+                    catch (NoSuchElementException)
+                    {
+
+                    }
+                    finally
+                    {
+                        BeforeBet();
+                    }
                 }
             }
         }

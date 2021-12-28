@@ -3,7 +3,7 @@ using System;
 
 namespace Scripts
 {
-    public class CalcSafe : GameScript
+    public class CalcStreak : GameScript
     {
         int waitFor;
         public int CanLose(decimal startBal, decimal startBet)
@@ -50,7 +50,7 @@ namespace Scripts
             BetFromStreakProfit(tokenMinBet); //see CanLose()
         }
         [Test]
-        public void CalcSafeStrategy()
+        public void CalcStreakStrategy()
         {
             PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }

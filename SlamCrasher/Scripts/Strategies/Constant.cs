@@ -2,7 +2,7 @@
 
 namespace Scripts
 {
-    public class SafeySafe : GameScript
+    public class Constant : GameScript
     {
         private void BeforeFirstBet()
         {
@@ -21,7 +21,7 @@ namespace Scripts
             BetFromStreakProfit(tokenMinBet);
         }
         [Test]
-        public void SafeySafeStrategy()
+        public void ConstantStrategy()
         {
             PlayGame(WeLost, WeWon, BeforeFirstBet, BeforeBet);
         }

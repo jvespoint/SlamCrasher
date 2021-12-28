@@ -54,9 +54,10 @@ namespace Pages
                 List<PreviousGame> gamesOnFile = ReadHistoryFile();
                 games.AddRange(gamesOnFile);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.WriteLine("Warning: History file not found.");
+                throw (ex);
             }
             finally
             {
@@ -71,7 +72,7 @@ namespace Pages
             List<PreviousGame> linesList = new List<PreviousGame>();
             foreach(string line in lines)
             {
-                string[] data = line.Split(" ");
+                string[] data = line.Replace('\t',' ').Split(" ");
                 linesList.Add(new PreviousGame(Int32.Parse(data[0]), decimal.Parse(data[1])));
             }
             return linesList;
@@ -306,6 +307,12 @@ namespace Pages
             Console.WriteLine($"Made it to round {gap} before a gap.");
             return gap;
         }
+        public int FindLastGap()
+        {
+            int gap = FindMissingGames()[^1];
+            Console.WriteLine($"Made it back to round {gap} before a gap.");
+            return gap;
+        }
         public int FindFirstLossAfter(int roundNumber, decimal target)
         {
             int lossIndex = games.FindIndex(GameIdFromRoundNumber(roundNumber), x => x.crash < target);
@@ -341,6 +348,36 @@ namespace Pages
                 Console.WriteLine($"Max losses for {targets[i]}x is {maxLossStreaks[i]} @  #{maxLossStreakIndexes[i]} (S/T: {maxLossStreaks[i] / targets[i]})");
             }
             return maxLossStreaks;
+        }
+        public void GetRequiredHistory(int number)
+        {
+            PreviousGame mostRecentGame = games.Last();
+            int lastGameIndex = GameIdFromRoundNumber(mostRecentGame.number);
+            int requiredGameNumber = mostRecentGame.number - (number + 1);
+            int requiredGameIndex = GameIdFromRoundNumber(requiredGameNumber);
+            List<int> missing = Enumerable.Range(requiredGameNumber, mostRecentGame.number - requiredGameNumber + 1).Except(games.Select(x => x.number)).ToList();
+            if (missing.Count > 0) { Console.WriteLine($"Required History: looking up {missing.Count} missing games."); }
+            for (int i = 0; i < missing.Count; i++)
+            {
+                games.Add(GetSpecificRound(missing[i]));
+                if (i == missing.Count - 1)
+                {
+                    CloseRoundHistoryPopup();
+                }
+            }
+            try
+            {
+                Update();
+            }
+            catch (Exception)
+            {
+                Goto(_driver.Url);
+                //CloseRoundHistoryPopup();
+            }
+            if (mostRecentGame != games.Last())
+            {
+                GetRequiredHistory(number);
+            }
         }
     }
 }

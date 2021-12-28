@@ -11,6 +11,7 @@ namespace Scripts
         public bool headless, demo;
         public string gameUrl, token, historyFile;
         public decimal tokenStart, tokenMinBet, startingBet, cashout, targetDefault, houseEdge, profitTarget;
+        public double risk;
         public int winsPerRun, tokenNormal, targetNormal, betInputPath, cashoutInputPath;
         public TimeSpan minRunTime;
         
@@ -37,6 +38,7 @@ namespace Scripts
             }
             cashout = decimal.Parse(ConfigurationManager.AppSettings["cashout"]);
             houseEdge = decimal.Parse(ConfigurationManager.AppSettings["houseEdge"]);
+            risk = double.Parse(ConfigurationManager.AppSettings["risk"]);
 
             try
             {

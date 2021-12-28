@@ -64,6 +64,10 @@ namespace Scripts
                     string responseString = responseContent.ReadAsStringAsync().Result.Replace("{\"" + tokenId + "\":{\"usd\":", "").Replace("}}", "");
                     double tokenPriceDouble = double.Parse(responseString);
                     decimal tokenPrice = (decimal)tokenPriceDouble;
+                    if (token == "slam")
+                    {
+                        tokenPrice *= 1000000;
+                    }
                     Console.WriteLine("$ / Hour: " + (profitHour * tokenPrice) + " USD");
                 }
             }
@@ -437,7 +441,7 @@ namespace Scripts
             {
                 oneInHowMany = 1.00m / chanceOfThisLoss;
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 oneInHowMany = 100000000000000m;
             }

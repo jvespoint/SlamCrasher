@@ -325,7 +325,15 @@ namespace Pages
         }
         public int[] FindMaxLossStreakForTarget(decimal[] targets)
         {
-            int firstGapNumber = FindFirstGap();
+            int firstGapNumber = 0;
+            try
+            {
+                firstGapNumber = FindFirstGap();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                firstGapNumber = games.Last().number;
+            }
             int[] firstLossNumbers = new int[targets.Count()];
             int[] maxLossStreaks = new int[targets.Count()];
             int[] maxLossStreakIndexes = new int[targets.Count()];
@@ -335,7 +343,7 @@ namespace Pages
                 while (true)
                 {
                     int firstWinAfterLossNumber = FindFirstWinAfter(firstLossNumbers[i], targets[i]);
-                    if (firstWinAfterLossNumber > firstGapNumber) { break; }
+                    if (firstWinAfterLossNumber >= firstGapNumber - 1) { break; }
 
                     int thisLossStreak = firstWinAfterLossNumber - firstLossNumbers[i];
                     if (thisLossStreak > maxLossStreaks[i])

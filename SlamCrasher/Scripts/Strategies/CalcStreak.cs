@@ -30,7 +30,7 @@ namespace Scripts
         private void BeforeFirstBet()
         {
             int maxLosses = _history.FindMaxLossStreakForTarget(new decimal[] { cashout })[0];
-            waitFor = (maxLosses - CanLose(balance, nextBet));
+            waitFor = maxLosses - CanLose(balance, nextBet);
             Console.WriteLine($"CalcSafe Start-up Complete: Wait for {waitFor} losses before betting at an auto-cashout of {cashout}.");
         }
         private void BeforeBet()

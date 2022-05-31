@@ -26,8 +26,8 @@ namespace Scripts
             targetNormal = Int32.Parse(ConfigurationManager.AppSettings["targetNormal"]);
             
             token = demo ? token = "slam" : token = ConfigurationManager.AppSettings["token"];
-            betInputPath = demo ? 1 : 2;
-            cashoutInputPath = demo ? 2 : 3;
+            betInputPath = 1;
+            cashoutInputPath = 2;
             tokenStart = decimal.Parse(ConfigurationManager.AppSettings[token + "Start"]);
             tokenMinBet = decimal.Parse(ConfigurationManager.AppSettings[token + "Minbet"]);
             tokenNormal = Int32.Parse(ConfigurationManager.AppSettings[token + "Normal"]);

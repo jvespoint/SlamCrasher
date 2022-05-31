@@ -15,12 +15,12 @@ namespace Scripts
         public SkipperTargets(double ch)
         {
             riskTolerance = ch;
-            int numTargets = 4991; // 1.01 + (1 + n*0.1); 4991=500.00x
+            int numTargets = 2000; // 1.01 + (1 + n*0.1); 4991=500.00x
             crashPoints = new decimal[numTargets];
             crashPoints[0] = 1.01m;
             for (int i = 1; i < numTargets; i++)
             {
-                crashPoints[i] = 1m + (0.10m * i);
+                crashPoints[i] = 1.00m + (0.10m * i);
             }
             absorbableLosses = new int[numTargets];
             requiredSkips = new int[numTargets];
@@ -54,7 +54,7 @@ namespace Scripts
                 streakLoss = 0.00m;
                 decimal bal = balance;
                 nextTarget = targets.crashPoints[i];
-                nextBet = tokenMinBet;
+                nextBet = startingBet;
                 ValidateBet();
                 while (bal - nextBet > 0.00m)
                 {
@@ -65,7 +65,6 @@ namespace Scripts
                 }
                 targets.absorbableLosses[i] = streak - 1; // -1 because the last one would bankrupt us if we lost.
             }
-            nextBet = tokenMinBet;
             streakLoss = 0.00m;
             targets.CalculateSkips();
             
@@ -89,7 +88,7 @@ namespace Scripts
                 {
                     streak = true;
                     nextTarget = targ;
-                    nextBet = tokenMinBet;
+                    nextBet = startingBet;
                     ValidateBet();
                     SetBet(nextBet, nextTarget, balance);
                 }
@@ -110,12 +109,16 @@ namespace Scripts
         private void WeWon()
         {
             streak = false;
-            nextBet = tokenMinBet;
-            _history.SkipGames(1);
+            nextBet = startingBet;
+            _history.SkipGames(2);
         }
         private void WeLost()
         {
             BetFromStreakProfit(tokenMinBet);
+            if (nextBet < startingBet)
+            {
+                nextBet = startingBet;
+            }
         }
         [Test]
         public void SkipperStrategy()

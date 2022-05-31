@@ -16,7 +16,7 @@ namespace Pages
 
         //Locators
         private readonly By connectingToServerMessage = By.XPath("//p[text()='Connecting to server..']");
-        private readonly By loginButtonLocator = By.XPath("//button[text()='Login To Play' and @data-lang-token='LoginToPlay']");
+        private readonly By loginButtonLocator = By.XPath("//button[text()='Log In To Play' and @data-lang-token='LoginToPlay']");
         private readonly By demoLoginButtonLocator = By.XPath("//button[text()='Free Demo' and @data-lang-token='SignUpToPlay']");
         private readonly By metamaskAlertShownLocator = By.XPath("//div[@class='dialog-text' and text()='Meta Mask / Trust Wallet is not installed!']");
         private readonly By alertDismissButtonLocator = By.XPath("//span[contains(@class,'dialog-button') and text()='OK']");
@@ -85,14 +85,14 @@ namespace Pages
             else
             {
                 Click(loginButtonLocator);
-                wait.Until(alertShown => MetamaskAlert);
-                Click(alertDismissButtonLocator);
-                wait.Until(menuShown => Web3WalletsMenuShown);
-                Click(walletConnectButtonLocator); //Opens a new tab: Wallectconnect QR code
-                var tabs = _driver.WindowHandles;
-                _driver.SwitchTo().Window(tabs[0]); //We need to close the old tab.
-                _driver.Close();
-                _driver.SwitchTo().Window(tabs[1]); //switch back to the QR code
+                //wait.Until(alertShown => MetamaskAlert);
+                //Click(alertDismissButtonLocator);
+                //wait.Until(menuShown => Web3WalletsMenuShown);
+                //Click(walletConnectButtonLocator); //Opens a new tab: Wallectconnect QR code
+                //var tabs = _driver.WindowHandles;
+                //_driver.SwitchTo().Window(tabs[0]); //We need to close the old tab.
+                //_driver.Close();
+                //_driver.SwitchTo().Window(tabs[1]); //switch back to the QR code
                 int seconds = 0;
                 while (WalletConnectQRShown) //Still waiting on user to scan the QR
                 {
@@ -159,7 +159,7 @@ namespace Pages
             Actions act = new Actions(_driver);
             act.ClickAndHold(range).MoveByOffset(0, 0).Perform();
             CustomTimeout(10);
-            act.MoveByOffset(-width, 0).Release().Perform();
+            act.MoveByOffset((-width/2)-10, 0).Release().Perform();
         }
         public void SetBetToMax()
         {
@@ -223,7 +223,7 @@ namespace Pages
                         Click(betButtonLocator);
                     }
                 }
-                CustomTimeout(200);
+                CustomTimeout(100);
             }
             return WinIndicator;
         }

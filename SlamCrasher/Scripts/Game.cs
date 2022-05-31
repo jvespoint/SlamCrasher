@@ -54,6 +54,10 @@ namespace Scripts
             decimal decMinutes = decimal.Parse(strSeconds) / 60.00m;
             decimal profitHour = decimal.Round(((TotalProfit() / decMinutes) * 60), 10);
             Console.WriteLine("Profit / Hour: " + profitHour + " " + token);
+            if (endSimulation == false)
+            {
+                _history.WriteHistoryFile();
+            }
             using (var client = new HttpClient())
             {
                 string tokenId = token == "bnb" ? "binancecoin" : "slam-token";
@@ -73,7 +77,6 @@ namespace Scripts
             }
             if (endSimulation == false)
             {
-                _history.WriteHistoryFile();
                 TearDown();
             }
         }
@@ -232,7 +235,7 @@ namespace Scripts
         }
         public void BetFromProfit(decimal profit)
         {
-            nextBet = startingBet;
+            nextBet = tokenMinBet;
             while (PotentialProfit() < profit)
             {
                 nextBet += tokenMinBet;

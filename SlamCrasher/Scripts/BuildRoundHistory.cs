@@ -1,6 +1,5 @@
 ﻿using NUnit.Framework;
 using Pages;
-using System.Linq;
 
 namespace Scripts
 {
@@ -22,6 +21,11 @@ namespace Scripts
                 FillGap(firstGapStart);
                 _history.WriteHistoryFile();
                 firstGapStart = _history.GameIdFromRoundNumber(_history.FindFirstGap());
+            }
+            while (true)
+            {
+                System.Console.Beep(440, 500);
+                _slamCrash.CustomTimeout(500);
             }
         }
         public void FillGap(int gapStart)
